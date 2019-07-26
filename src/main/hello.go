@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	//"io"
+	//Удалить это тетст получения на локальный комп
 
 	//"encoding/base64"
 	//"io/ioutil"
