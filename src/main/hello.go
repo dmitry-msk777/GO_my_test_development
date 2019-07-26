@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	//"io"
-	//Строка добалена из сайта
 	//"encoding/base64"
 	//"io/ioutil"
 	//"log"
