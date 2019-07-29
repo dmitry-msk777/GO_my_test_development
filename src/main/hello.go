@@ -12,7 +12,7 @@ import (
 	//"net/mail"
 	//"net/smtp"
 	//"os"
-	//"strings"
+	"strings"
 	//"github.com/atotto/clipboard"
 	//"time"
 	//"github.com/tiaguinho/gosoap"
@@ -23,21 +23,18 @@ import (
 	//"net/url"
 	"bytes"
 	"strconv"
-
 	//"golang.org/x/net/html/charset"
 	//"encoding/json"
 	//"os/signal"
 	//"syscall"
 	//"github.com/gotk3/gotk3/gtk"
-	"time"
-
+	//	"time"
 	//"fyne.io/fyne/app"
 	//"fyne.io/fyne/widget"
-	"math/rand"
-	"sync"
-
-	"github.com/gosuri/uiprogress"
-	"github.com/gosuri/uiprogress/util/strutil"
+	//	"math/rand"
+	//	"sync"
+	//"github.com/gosuri/uiprogress"
+	//"github.com/gosuri/uiprogress/util/strutil"
 )
 
 type Valute struct {
@@ -108,25 +105,28 @@ func indexPage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Host = "+r.Host)
 	fmt.Fprintln(w, "RemoteAddr = "+r.RemoteAddr)
 	fmt.Fprintln(w, "RequestURI = "+r.RequestURI)
+	fmt.Fprintln(w, "r.URL.String() = "+r.URL.String())
 	//fmt.Fprintln(w, "----------------------------------------")
-	fmt.Fprintln(w, "r.URL.Query().Get() = "+r.URL.Query().Get("Param777"))
+	fmt.Fprintln(w, "r.URL.Query().Get() = "+r.URL.Query().Get("token"))
+	q := r.URL.Query()
+	fmt.Fprintln(w, "r.URL.Query().Get()_2 = "+strings.Join(q["token"], ", "))
 }
 
-func deploy(app string, wg *sync.WaitGroup) {
-	defer wg.Done()
-	bar := uiprogress.AddBar(len(steps)).AppendCompleted().PrependElapsed()
-	bar.Width = 50
+//func deploy(app string, wg *sync.WaitGroup) {
+//	defer wg.Done()
+//	bar := uiprogress.AddBar(len(steps)).AppendCompleted().PrependElapsed()
+//	bar.Width = 50
 
-	// prepend the deploy step to the bar
-	bar.PrependFunc(func(b *uiprogress.Bar) string {
-		return strutil.Resize(app+": "+steps[b.Current()-1], 22)
-	})
+//	// prepend the deploy step to the bar
+//	bar.PrependFunc(func(b *uiprogress.Bar) string {
+//		return strutil.Resize(app+": "+steps[b.Current()-1], 22)
+//	})
 
-	rand.Seed(500)
-	for bar.Incr() {
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000)))
-	}
-}
+//	rand.Seed(500)
+//	for bar.Incr() {
+//		time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000)))
+//	}
+//}
 
 func main() {
 
