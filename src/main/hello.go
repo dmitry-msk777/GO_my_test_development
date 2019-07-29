@@ -35,6 +35,7 @@ import (
 	//	"sync"
 	//"github.com/gosuri/uiprogress"
 	//"github.com/gosuri/uiprogress/util/strutil"
+	//"github.com/gorilla/mux"
 )
 
 type Valute struct {
@@ -110,6 +111,11 @@ func indexPage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "r.URL.Query().Get() = "+r.URL.Query().Get("token"))
 	q := r.URL.Query()
 	fmt.Fprintln(w, "r.URL.Query().Get()_2 = "+strings.Join(q["token"], ", "))
+	w.Write([]byte("Gorilla!\n"))
+}
+
+func ProductsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "Test 1C")
 }
 
 //func deploy(app string, wg *sync.WaitGroup) {
@@ -565,9 +571,16 @@ func main() {
 	//	fmt.Println("apps: successfully deployed: app1, app2")
 
 	//--------------- Конец работа с Прогресс баром -----------------
+	//	r := mux.NewRouter()
+	//	r.HandleFunc("/", indexPage)
+	//	r.HandleFunc("/products", ProductsHandler)
 
 	http.HandleFunc("/", indexPage)
-	//fmt.Println(clipRead)
+	http.HandleFunc("/products", ProductsHandler)
+
 	fmt.Println("Start 1C Port 8081")
+
 	http.ListenAndServe(":8081", nil)
+	//http.ListenAndServe(":8081", r)
+
 }
