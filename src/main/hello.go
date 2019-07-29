@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	//"io"
+
 	//"encoding/base64"
 	//"io/ioutil"
 	//"log"
 	"net/http"
+
 	//"net/mail"
 	//"net/smtp"
 	//"os"
@@ -19,20 +21,23 @@ import (
 	//"github.com/hooklift/gowsdl"
 	//"crypto/tls"
 	//"net/url"
-	//"strconv"
 	"bytes"
+	"strconv"
+
 	//"golang.org/x/net/html/charset"
 	//"encoding/json"
 	//"os/signal"
 	//"syscall"
 	//"github.com/gotk3/gotk3/gtk"
-	//"time"
+	"time"
+
 	//"fyne.io/fyne/app"
 	//"fyne.io/fyne/widget"
-	//"math/rand"
-	//"sync"
-	//"github.com/gosuri/uiprogress"
-	//"github.com/gosuri/uiprogress/util/strutil"
+	"math/rand"
+	"sync"
+
+	"github.com/gosuri/uiprogress"
+	"github.com/gosuri/uiprogress/util/strutil"
 )
 
 type Valute struct {
@@ -97,24 +102,31 @@ var steps = []string{
 //}
 
 func indexPage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Test 1C")
+	//fmt.Fprint(w, "Test 1C")
+	//fmt.Fprint(w, "ContentLength = "+strconv.Itoa(1001))
+	fmt.Fprintln(w, "ContentLength = "+strconv.FormatInt(r.ContentLength, 10))
+	fmt.Fprintln(w, "Host = "+r.Host)
+	fmt.Fprintln(w, "RemoteAddr = "+r.RemoteAddr)
+	fmt.Fprintln(w, "RequestURI = "+r.RequestURI)
+	//fmt.Fprintln(w, "----------------------------------------")
+	fmt.Fprintln(w, "r.URL.Query().Get() = "+r.URL.Query().Get("Param777"))
 }
 
-//func deploy(app string, wg *sync.WaitGroup) {
-//	defer wg.Done()
-//	bar := uiprogress.AddBar(len(steps)).AppendCompleted().PrependElapsed()
-//	bar.Width = 50
+func deploy(app string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	bar := uiprogress.AddBar(len(steps)).AppendCompleted().PrependElapsed()
+	bar.Width = 50
 
-//	// prepend the deploy step to the bar
-//	bar.PrependFunc(func(b *uiprogress.Bar) string {
-//		return strutil.Resize(app+": "+steps[b.Current()-1], 22)
-//	})
+	// prepend the deploy step to the bar
+	bar.PrependFunc(func(b *uiprogress.Bar) string {
+		return strutil.Resize(app+": "+steps[b.Current()-1], 22)
+	})
 
-//	rand.Seed(500)
-//	for bar.Incr() {
-//		time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000)))
-//	}
-//}
+	rand.Seed(500)
+	for bar.Incr() {
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000)))
+	}
+}
 
 func main() {
 
@@ -538,7 +550,7 @@ func main() {
 	//		time.Sleep(time.Millisecond * 20)
 	//	}
 
-	//----------------Работа с еще одним Прогресс баром-------------------------------------------
+	//-----------------------------------------------------------
 
 	//	fmt.Println("apps: deployment started: app1, app2")
 	//	uiprogress.Start()
@@ -556,6 +568,6 @@ func main() {
 
 	http.HandleFunc("/", indexPage)
 	//fmt.Println(clipRead)
-	fmt.Println("Start 1C Port 8080")
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Start 1C Port 8081")
+	http.ListenAndServe(":8081", nil)
 }
