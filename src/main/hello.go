@@ -40,6 +40,7 @@ import (
 	//"html/template"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Todo struct {
@@ -194,6 +195,16 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	// Revoke users authentication
 	session.Values["authenticated"] = false
 	session.Save(r, w)
+}
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
 //func deploy(app string, wg *sync.WaitGroup) {
@@ -715,43 +726,54 @@ func main() {
 	//--------------- Конец работа с Сессиями и куки -----------------
 
 	//--------------- Работа с WebSocket -----------------
-	http.HandleFunc("/echo", func(w http.ResponseWriter, r *http.Request) {
-		conn, _ := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
+	//	http.HandleFunc("/echo", func(w http.ResponseWriter, r *http.Request) {
+	//		conn, _ := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
 
-		for {
-			// Read message from browser
-			msgType, msg, err := conn.ReadMessage()
-			if err != nil {
-				return
-			}
+	//		for {
+	//			// Read message from browser
+	//			msgType, msg, err := conn.ReadMessage()
+	//			if err != nil {
+	//				return
+	//			}
 
-			// Print the message to the console
-			fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+	//			// Print the message to the console
+	//			fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
 
-			// Write message back to browser
-			if err = conn.WriteMessage(msgType, msg); err != nil {
-				return
-			}
-		}
-	})
+	//			// Write message back to browser
+	//			if err = conn.WriteMessage(msgType, msg); err != nil {
+	//				return
+	//			}
+	//		}
+	//	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "websockets.html")
-	})
+	//	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//		http.ServeFile(w, r, "websockets.html")
+	//	})
 
-	http.ListenAndServe(":8081", nil)
+	//	http.ListenAndServe(":8081", nil)
 	//--------------- Конец работа с WebSocket -----------------
 
+	//--------------- Работа с Password Hashing (bcrypt) -----------------
+	//	password := "secret"
+	//	hash, _ := HashPassword(password) // ignore error for the sake of simplicity
+
+	//	fmt.Println("Password:", password)
+	//	fmt.Println("Hash:    ", hash)
+
+	//	match := CheckPasswordHash(password, hash)
+	//	fmt.Println("Match:   ", match)
+	//---------------Конец работа с Password Hashing (bcrypt) -----------------
+
+	//--------------- Работа с gorilla/mux -----------------
 	//	//	r := mux.NewRouter()
 	//	//	r.HandleFunc("/", indexPage)
 	//	//	r.HandleFunc("/products", ProductsHandler)
-
-	//	http.HandleFunc("/", indexPage)
-	//	http.HandleFunc("/products", ProductsHandler)
-
-	//	fmt.Println("Start 1C Port 8081")
-
-	//	http.ListenAndServe(":8081", nil)
 	//	//http.ListenAndServe(":8081", r)
+	//--------------- Конец работа с gorilla/mux -----------------
+
+	http.HandleFunc("/", indexPage)
+	http.HandleFunc("/products", ProductsHandler)
+	fmt.Println("Start 1C Port 8081")
+	http.ListenAndServe(":8081", nil)
 
 }
