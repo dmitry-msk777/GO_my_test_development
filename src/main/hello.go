@@ -6,7 +6,7 @@ import (
 
 	//"encoding/base64"
 	//"io/ioutil"
-	//"log"
+	"log"
 	"net/http"
 
 	//"net/mail"
@@ -36,7 +36,24 @@ import (
 	//"github.com/gosuri/uiprogress"
 	//"github.com/gosuri/uiprogress/util/strutil"
 	//"github.com/gorilla/mux"
+	//"html/template"
 )
+
+type Todo struct {
+	Title string
+	Done  bool
+}
+
+type TodoPageData struct {
+	PageTitle string
+	Todos     []Todo
+}
+
+type ContactDetails struct {
+	Email   string
+	Subject string
+	Message string
+}
 
 type Valute struct {
 	ID_attr      string `xml:"ID,attr"`
@@ -116,6 +133,21 @@ func indexPage(w http.ResponseWriter, r *http.Request) {
 
 func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Test 1C")
+}
+
+func logging(f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.URL.Path)
+		f(w, r)
+	}
+}
+
+func foo(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "foo")
+}
+
+func bar(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "bar")
 }
 
 //func deploy(app string, wg *sync.WaitGroup) {
@@ -571,16 +603,73 @@ func main() {
 	//	fmt.Println("apps: successfully deployed: app1, app2")
 
 	//--------------- Конец работа с Прогресс баром -----------------
-	//	r := mux.NewRouter()
-	//	r.HandleFunc("/", indexPage)
-	//	r.HandleFunc("/products", ProductsHandler)
 
-	http.HandleFunc("/", indexPage)
-	http.HandleFunc("/products", ProductsHandler)
+	//--------------- Работа с Шаблонами HTTP -----------------
+	//Страница
+	//	tmpl := template.Must(template.ParseFiles("layout.html"))
 
-	fmt.Println("Start 1C Port 8081")
+	//	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//		data := TodoPageData{
+	//			PageTitle: "My TODO list",
+	//			Todos: []Todo{
+	//				{Title: "Task 1", Done: false},
+	//				{Title: "Task 2", Done: true},
+	//				{Title: "Task 3", Done: true},
+	//			},
+	//		}
+	//		tmpl.Execute(w, data)
+	//	})
+
+	//	http.ListenAndServe(":8081", nil)
+
+	//Форма
+	//	tmpl := template.Must(template.ParseFiles("forms.html"))
+
+	//	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//		if r.Method != http.MethodPost {
+	//			tmpl.Execute(w, nil)
+	//			return
+	//		}
+
+	//		details := ContactDetails{
+	//			Email:   r.FormValue("email"),
+	//			Subject: r.FormValue("subject"),
+	//			Message: r.FormValue("message"),
+	//		}
+
+	//		// do something with details
+	//		_ = details
+
+	//		tmpl.Execute(w, struct{ Success bool }{true})
+	//	})
+
+	//	http.ListenAndServe(":8081", nil)
+	//--------------- Конец работа с Шаблонами HTTP -----------------
+
+	//--------------- Работа с Файл-сервером HTTP -----------------
+
+	//	fs := http.FileServer(http.Dir("assets/"))
+	//	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	//	http.ListenAndServe(":8081", nil)
+	//--------------- Конец работа с Файл-сервером HTTP -----------------
+
+	//--------------- Работа с Middleware (Basic) -----------------
+	http.HandleFunc("/foo", logging(foo))
+	http.HandleFunc("/bar", logging(bar))
 
 	http.ListenAndServe(":8081", nil)
-	//http.ListenAndServe(":8081", r)
+	//--------------- Конец работы с Middleware (Basic) -----------------
+
+	//	//	r := mux.NewRouter()
+	//	//	r.HandleFunc("/", indexPage)
+	//	//	r.HandleFunc("/products", ProductsHandler)
+
+	//	http.HandleFunc("/", indexPage)
+	//	http.HandleFunc("/products", ProductsHandler)
+
+	//	fmt.Println("Start 1C Port 8081")
+
+	//	http.ListenAndServe(":8081", nil)
+	//	//http.ListenAndServe(":8081", r)
 
 }
