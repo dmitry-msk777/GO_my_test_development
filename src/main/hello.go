@@ -39,6 +39,7 @@ import (
 	//"github.com/gorilla/mux"
 	//"html/template"
 	"github.com/gorilla/sessions"
+	"github.com/gorilla/websocket"
 )
 
 type Todo struct {
@@ -116,6 +117,11 @@ var steps = []string{
 	"seeding database",
 	"deploying",
 	"staring servers",
+}
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
 
 //func encodeRFC2047(String string) string {
@@ -701,12 +707,40 @@ func main() {
 	//--------------- Конец работы с Middleware (Basic) -----------------
 
 	//--------------- Работа с Сессиями и куки -----------------
-	http.HandleFunc("/secret", secret)
-	http.HandleFunc("/login", login)
-	http.HandleFunc("/logout", logout)
+	//	http.HandleFunc("/secret", secret)
+	//	http.HandleFunc("/login", login)
+	//	http.HandleFunc("/logout", logout)
+
+	//	http.ListenAndServe(":8081", nil)
+	//--------------- Конец работа с Сессиями и куки -----------------
+
+	//--------------- Работа с WebSocket -----------------
+	http.HandleFunc("/echo", func(w http.ResponseWriter, r *http.Request) {
+		conn, _ := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
+
+		for {
+			// Read message from browser
+			msgType, msg, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+
+			// Print the message to the console
+			fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+
+			// Write message back to browser
+			if err = conn.WriteMessage(msgType, msg); err != nil {
+				return
+			}
+		}
+	})
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "websockets.html")
+	})
 
 	http.ListenAndServe(":8081", nil)
-	//--------------- Конец работа с Сессиями и куки -----------------
+	//--------------- Конец работа с WebSocket -----------------
 
 	//	//	r := mux.NewRouter()
 	//	//	r.HandleFunc("/", indexPage)
