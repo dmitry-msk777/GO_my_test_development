@@ -23,6 +23,7 @@ import (
 	//"net/url"
 	"bytes"
 	"strconv"
+
 	//"golang.org/x/net/html/charset"
 	//"encoding/json"
 	//"os/signal"
@@ -37,6 +38,7 @@ import (
 	//"github.com/gosuri/uiprogress/util/strutil"
 	//"github.com/gorilla/mux"
 	//"html/template"
+	"github.com/gorilla/sessions"
 )
 
 type Todo struct {
@@ -100,6 +102,12 @@ var (
 //	parsed   io.Reader
 )
 
+var (
+	// key must be 16, 24 or 32 bytes long (AES-128, AES-192 or AES-256)
+	key   = []byte("super-secret-key")
+	store = sessions.NewCookieStore(key)
+)
+
 var steps = []string{
 	"downloading source",
 	"installing deps",
@@ -148,6 +156,38 @@ func foo(w http.ResponseWriter, r *http.Request) {
 
 func bar(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "bar")
+}
+
+func secret(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "cookie-name")
+
+	// Check if user is authenticated
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	// Print secret message
+	fmt.Fprintln(w, "The cake is a lie!")
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "cookie-name")
+
+	// Authentication goes here
+	// ...
+
+	// Set user as authenticated
+	session.Values["authenticated"] = true
+	session.Save(r, w)
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "cookie-name")
+
+	// Revoke users authentication
+	session.Values["authenticated"] = false
+	session.Save(r, w)
 }
 
 //func deploy(app string, wg *sync.WaitGroup) {
@@ -654,11 +694,19 @@ func main() {
 	//--------------- Конец работа с Файл-сервером HTTP -----------------
 
 	//--------------- Работа с Middleware (Basic) -----------------
-	http.HandleFunc("/foo", logging(foo))
-	http.HandleFunc("/bar", logging(bar))
+	//	http.HandleFunc("/foo", logging(foo))
+	//	http.HandleFunc("/bar", logging(bar))
+
+	//	http.ListenAndServe(":8081", nil)
+	//--------------- Конец работы с Middleware (Basic) -----------------
+
+	//--------------- Работа с Сессиями и куки -----------------
+	http.HandleFunc("/secret", secret)
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/logout", logout)
 
 	http.ListenAndServe(":8081", nil)
-	//--------------- Конец работы с Middleware (Basic) -----------------
+	//--------------- Конец работа с Сессиями и куки -----------------
 
 	//	//	r := mux.NewRouter()
 	//	//	r.HandleFunc("/", indexPage)
