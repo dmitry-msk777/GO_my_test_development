@@ -40,6 +40,8 @@ import (
 	//"html/template"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
+
+	//"go.uber.org/ratelimit"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -770,6 +772,17 @@ func main() {
 	//	//	r.HandleFunc("/products", ProductsHandler)
 	//	//http.ListenAndServe(":8081", r)
 	//--------------- Конец работа с gorilla/mux -----------------
+
+	//--------------- Работа с "go.uber.org/ratelimit задержка в секундах -----------------
+	//	rl := ratelimit.New(1) // per second
+
+	//	prev := time.Now()
+	//	for i := 0; i < 10; i++ {
+	//		now := rl.Take()
+	//		fmt.Println(i, now.Sub(prev))
+	//		prev = now
+	//	}
+	//--------------- Конец работа с "go.uber.org/ratelimit задержка в секундах -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
