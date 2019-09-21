@@ -42,6 +42,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	//"go.uber.org/ratelimit"
+	"github.com/Syfaro/telegram-bot-api"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -783,6 +784,17 @@ func main() {
 	//		prev = now
 	//	}
 	//--------------- Конец работа с "go.uber.org/ratelimit задержка в секундах -----------------
+
+	//--------------- Работа с Telegram Bot -----------------
+	bot, err := tgbotapi.NewBotAPI("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4")
+	if err != nil {
+		log.Panic(err)
+	}
+	bot.Debug = true
+	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	fmt.Println("Authorized on account %s", bot.Self.UserName)
+	//--------------- Конец работа с Telegram Bot -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
