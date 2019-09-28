@@ -11,8 +11,9 @@ import (
 
 	//"net/mail"
 	//"net/smtp"
-	//"os"
+	"os"
 	"strings"
+
 	//"github.com/atotto/clipboard"
 	//"time"
 	//"github.com/tiaguinho/gosoap"
@@ -25,7 +26,7 @@ import (
 	"strconv"
 
 	//"golang.org/x/net/html/charset"
-	//"encoding/json"
+	"encoding/json"
 	//"os/signal"
 	//"syscall"
 	//"github.com/gotk3/gotk3/gtk"
@@ -42,9 +43,14 @@ import (
 	"github.com/gorilla/websocket"
 
 	//"go.uber.org/ratelimit"
-	"github.com/Syfaro/telegram-bot-api"
+	//"github.com/Syfaro/telegram-bot-api"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/telegram-bot-api.v4"
 )
+
+type Config struct {
+	TelegramBotToken string
+}
 
 type Todo struct {
 	Title string
@@ -785,16 +791,54 @@ func main() {
 	//	}
 	//--------------- Конец работа с "go.uber.org/ratelimit задержка в секундах -----------------
 
-	//--------------- Работа с Telegram Bot -----------------
-	bot, err := tgbotapi.NewBotAPI("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4")
+	//--------------- Работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
+	//	fmt.Println("Test")
+	//	bot, err := tgbotapi.NewBotAPI("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4")
+	//	if err != nil {
+	//		log.Panic(err)
+	//	}
+	//	bot.Debug = true
+	//	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	//	fmt.Println("Authorized on account %s", bot.Self.UserName)
+	//--------------- Конец работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
+
+	//--------------- Работа с Telegram Bot через "gopkg.in/telegram-bot-api.v4" -----------------
+	file, _ := os.Open("./dndspellsbot/config.json")
+	decoder := json.NewDecoder(file)
+	configuration := Config{}
+	err := decoder.Decode(&configuration)
 	if err != nil {
 		log.Panic(err)
 	}
-	bot.Debug = true
+	fmt.Println(configuration.TelegramBotToken)
+
+	bot, err := tgbotapi.NewBotAPI(configuration.TelegramBotToken)
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	bot.Debug = false
+
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	fmt.Println("Authorized on account %s", bot.Self.UserName)
-	//--------------- Конец работа с Telegram Bot -----------------
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates, err := bot.GetUpdatesChan(u)
+
+	if err != nil {
+		log.Panic(err)
+	}
+	// В канал updates будут приходить все новые сообщения.
+	for update := range updates {
+		// Создав структуру - можно её отправить обратно боту
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+		msg.ReplyToMessageID = update.Message.MessageID
+		bot.Send(msg)
+	}
+	//--------------- Конец работа с Telegram Bot через "gopkg.in/telegram-bot-api.v4" -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
