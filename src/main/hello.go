@@ -5,14 +5,15 @@ import (
 	//"io"
 
 	//"encoding/base64"
-	//"io/ioutil"
+	"io/ioutil"
 	"log"
 	"net/http"
 
 	//"net/mail"
 	//"net/smtp"
-	//"os"
+	"os"
 	"strings"
+
 	//"github.com/atotto/clipboard"
 	//"time"
 	//"github.com/tiaguinho/gosoap"
@@ -25,7 +26,7 @@ import (
 	"strconv"
 
 	//"golang.org/x/net/html/charset"
-	//"encoding/json"
+	"encoding/json"
 	//"os/signal"
 	//"syscall"
 	//"github.com/gotk3/gotk3/gtk"
@@ -42,9 +43,17 @@ import (
 	"github.com/gorilla/websocket"
 
 	//"go.uber.org/ratelimit"
-	"github.com/Syfaro/telegram-bot-api"
+	//"github.com/Syfaro/telegram-bot-api"
+	//"net/proxy"
+	"golang.org/x/net/proxy"
+
 	"golang.org/x/crypto/bcrypt"
+	//"gopkg.in/telegram-bot-api.v4"
 )
+
+type Config struct {
+	TelegramBotToken string
+}
 
 type Todo struct {
 	Title string
@@ -785,16 +794,98 @@ func main() {
 	//	}
 	//--------------- Конец работа с "go.uber.org/ratelimit задержка в секундах -----------------
 
-	//--------------- Работа с Telegram Bot -----------------
-	bot, err := tgbotapi.NewBotAPI("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4")
-	if err != nil {
-		log.Panic(err)
+	//--------------- Работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
+	file, _ := os.Open("./dndspellsbot/config.json")
+	decoder := json.NewDecoder(file)
+	configuration := Config{}
+	err2 := decoder.Decode(&configuration)
+	if err2 != nil {
+		log.Panic(err2)
 	}
-	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	fmt.Println(configuration.TelegramBotToken)
 
-	fmt.Println("Authorized on account %s", bot.Self.UserName)
-	//--------------- Конец работа с Telegram Bot -----------------
+	//dialSocksProxy, err := proxy.SOCKS5("tcp", "96.44.183.149:55225", nil, proxy.Direct)
+	dialSocksProxy, err := proxy.SOCKS5("tcp", "96.44.183.149:55225", nil, nil)
+	if err != nil {
+		fmt.Println("Error connecting to proxy:", err)
+	}
+	tr := &http.Transport{Dial: dialSocksProxy.Dial}
+
+	// Create client
+	myClient := &http.Client{
+		Transport: tr,
+	}
+
+	resp, err := myClient.Get("https://api.telegram.org/808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4/getMe")
+	if err != nil {
+		fmt.Println(err)
+		//return
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(body))
+
+	//	fmt.Println("333")
+	//	bot, err := tgbotapi.NewBotAPIWithClient("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4", myClient)
+	//	if err != nil {
+	//		fmt.Println(err)
+	//	}
+	//	fmt.Println("123")
+	//	bot.Debug = false
+	//	fmt.Println("Authorized on account %s", bot.Self.UserName)
+
+	//	fmt.Println("Authorized on account %s", bot.Self.UserName)
+	//--------------- Конец работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
+
+	//--------------- Работа с Telegram Bot через "gopkg.in/telegram-bot-api.v4" -----------------
+
+	//	//dialSocksProxy, err := proxy.SOCKS5("tcp", "85.238.105.35:3629", nil, proxy.Direct)
+	//	dialSocksProxy, err := proxy.SOCKS5("tcp", "190.242.41.133:11337", nil, nil)
+	//	if err != nil {
+	//		fmt.Println("Error connecting to proxy:", err)
+	//	}
+	//	tr := &http.Transport{Dial: dialSocksProxy.Dial}
+
+	//	// Create client
+	//	myClient := &http.Client{
+	//		Transport: tr,
+	//	}
+
+	//	file, _ := os.Open("./dndspellsbot/config.json")
+	//	decoder := json.NewDecoder(file)
+	//	configuration := Config{}
+	//	err2 := decoder.Decode(&configuration)
+	//	if err2 != nil {
+	//		log.Panic(err2)
+	//	}
+	//	fmt.Println(configuration.TelegramBotToken)
+
+	//	bot, err := tgbotapi.NewBotAPIWithClient(configuration.TelegramBotToken, myClient)
+
+	//	if err != nil {
+	//		log.Panic(err)
+	//	}
+
+	//	bot.Debug = false
+
+	//	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	//	u := tgbotapi.NewUpdate(0)
+	//	u.Timeout = 60
+
+	//	updates, err := bot.GetUpdatesChan(u)
+
+	//	if err != nil {
+	//		log.Panic(err)
+	//	}
+	//	// В канал updates будут приходить все новые сообщения.
+	//	for update := range updates {
+	//		// Создав структуру - можно её отправить обратно боту
+	//		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+	//		msg.ReplyToMessageID = update.Message.MessageID
+	//		bot.Send(msg)
+	//	}
+	//--------------- Конец работа с Telegram Bot через "gopkg.in/telegram-bot-api.v4" -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
