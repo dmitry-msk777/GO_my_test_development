@@ -5,7 +5,7 @@ import (
 	//"io"
 
 	//"encoding/base64"
-	"io/ioutil"
+	//"io/ioutil"
 	"log"
 	"net/http"
 
@@ -43,12 +43,14 @@ import (
 	"github.com/gorilla/websocket"
 
 	//"go.uber.org/ratelimit"
-	//"github.com/Syfaro/telegram-bot-api"
+	"github.com/Syfaro/telegram-bot-api"
 	//"net/proxy"
 	"golang.org/x/net/proxy"
 
+	//"github.com/carbocation/go-instagram/instagram"
 	"golang.org/x/crypto/bcrypt"
-	//"gopkg.in/telegram-bot-api.v4"
+
+	"reflect"
 )
 
 type Config struct {
@@ -804,11 +806,24 @@ func main() {
 	}
 	fmt.Println(configuration.TelegramBotToken)
 
-	//dialSocksProxy, err := proxy.SOCKS5("tcp", "96.44.183.149:55225", nil, proxy.Direct)
-	dialSocksProxy, err := proxy.SOCKS5("tcp", "96.44.183.149:55225", nil, nil)
+	//Стандартное обращение для получения тела страницы
+	//	resp, err := http.Get("https://www.google.ru")
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+
+	//	defer resp.Body.Close()
+	//	body, err := ioutil.ReadAll(resp.Body)
+	//	fmt.Println(string(body))
+	//	//io.Copy(os.Stdout, resp.Body)
+
+	//dialSocksProxy, err := proxy.SOCKS5("tcp", "47.254.134.144:8082", nil, proxy.Direct)
+	dialSocksProxy, err := proxy.SOCKS5("tcp", "51.68.142.150:9300", nil, proxy.Direct)
+
 	if err != nil {
 		fmt.Println("Error connecting to proxy:", err)
 	}
+
 	tr := &http.Transport{Dial: dialSocksProxy.Dial}
 
 	// Create client
@@ -816,76 +831,60 @@ func main() {
 		Transport: tr,
 	}
 
-	resp, err := myClient.Get("https://api.telegram.org/808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4/getMe")
+	bot, err := tgbotapi.NewBotAPIWithClient("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4", myClient)
 	if err != nil {
 		fmt.Println(err)
-		//return
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(body))
 
-	//	fmt.Println("333")
-	//	bot, err := tgbotapi.NewBotAPIWithClient("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4", myClient)
-	//	if err != nil {
-	//		fmt.Println(err)
-	//	}
-	//	fmt.Println("123")
-	//	bot.Debug = false
-	//	fmt.Println("Authorized on account %s", bot.Self.UserName)
+	bot.Debug = true
+	fmt.Println("Authorized on account %s", bot.Self.UserName)
 
-	//	fmt.Println("Authorized on account %s", bot.Self.UserName)
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates, err := bot.GetUpdatesChan(u)
+
+	for update := range updates {
+		if update.Message == nil { // ignore any non-Message Updates
+			continue
+		}
+
+		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+
+		var reply string
+		var ChatID int64
+
+		ChatID = update.Message.Chat.ID
+
+		// Текст сообщения
+		Text := update.Message.Text
+
+		//Проверка на тип не нужна т.к сейчас в бот не приходтя не текстовые команды... Они находятся в отдельных структурах update.Message.Photo
+		if reflect.TypeOf(update.Message.Text).Kind() != reflect.String {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Use the words for search.")
+			bot.Send(msg)
+			continue
+		}
+
+		//				if update.Message.NewChatParticipant.UserName != "" {
+		//					// В чат вошел новый пользователь
+		//					// Поприветствуем его
+		//					reply = fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
+		//						update.Message.NewChatParticipant.UserName)
+		//				}
+
+		if Text != "" {
+			reply = Text
+		}
+
+		msg := tgbotapi.NewMessage(ChatID, reply)
+		msg.ReplyToMessageID = update.Message.MessageID
+
+		bot.Send(msg)
+
+	}
+
 	//--------------- Конец работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
-
-	//--------------- Работа с Telegram Bot через "gopkg.in/telegram-bot-api.v4" -----------------
-
-	//	//dialSocksProxy, err := proxy.SOCKS5("tcp", "85.238.105.35:3629", nil, proxy.Direct)
-	//	dialSocksProxy, err := proxy.SOCKS5("tcp", "190.242.41.133:11337", nil, nil)
-	//	if err != nil {
-	//		fmt.Println("Error connecting to proxy:", err)
-	//	}
-	//	tr := &http.Transport{Dial: dialSocksProxy.Dial}
-
-	//	// Create client
-	//	myClient := &http.Client{
-	//		Transport: tr,
-	//	}
-
-	//	file, _ := os.Open("./dndspellsbot/config.json")
-	//	decoder := json.NewDecoder(file)
-	//	configuration := Config{}
-	//	err2 := decoder.Decode(&configuration)
-	//	if err2 != nil {
-	//		log.Panic(err2)
-	//	}
-	//	fmt.Println(configuration.TelegramBotToken)
-
-	//	bot, err := tgbotapi.NewBotAPIWithClient(configuration.TelegramBotToken, myClient)
-
-	//	if err != nil {
-	//		log.Panic(err)
-	//	}
-
-	//	bot.Debug = false
-
-	//	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	//	u := tgbotapi.NewUpdate(0)
-	//	u.Timeout = 60
-
-	//	updates, err := bot.GetUpdatesChan(u)
-
-	//	if err != nil {
-	//		log.Panic(err)
-	//	}
-	//	// В канал updates будут приходить все новые сообщения.
-	//	for update := range updates {
-	//		// Создав структуру - можно её отправить обратно боту
-	//		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-	//		msg.ReplyToMessageID = update.Message.MessageID
-	//		bot.Send(msg)
-	//	}
-	//--------------- Конец работа с Telegram Bot через "gopkg.in/telegram-bot-api.v4" -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
