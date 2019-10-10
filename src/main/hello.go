@@ -5,7 +5,7 @@ import (
 	//"io"
 
 	//"encoding/base64"
-	//"io/ioutil"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -17,17 +17,18 @@ import (
 	//"github.com/atotto/clipboard"
 	//"time"
 	//"github.com/tiaguinho/gosoap"
-	"encoding/xml"
+	//"encoding/xml"
 	//"github.com/achiku/soapc"
 	//"github.com/hooklift/gowsdl"
 	//"crypto/tls"
-	//"net/url"
 	"bytes"
+	"net/url"
 	"strconv"
 
 	//"golang.org/x/net/html/charset"
 	"encoding/json"
 	//"os/signal"
+
 	//"syscall"
 	//"github.com/gotk3/gotk3/gtk"
 	//	"time"
@@ -45,12 +46,13 @@ import (
 	//"go.uber.org/ratelimit"
 	"github.com/Syfaro/telegram-bot-api"
 	//"net/proxy"
+
 	"golang.org/x/net/proxy"
+
+	"reflect"
 
 	//"github.com/carbocation/go-instagram/instagram"
 	"golang.org/x/crypto/bcrypt"
-
-	"reflect"
 )
 
 type Config struct {
@@ -82,12 +84,12 @@ type Valute struct {
 	Value        string `xml:"Value"`
 }
 
-type Result struct {
-	XMLName   xml.Name `xml:"ValCurs"`
-	Date_attr string   `xml:"Date,attr"`
-	Name_attr string   `xml:"name,attr"`
-	Valute    []Valute
-}
+//type Result struct {
+//	XMLName   xml.Name `xml:"ValCurs"`
+//	Date_attr string   `xml:"Date,attr"`
+//	Name_attr string   `xml:"name,attr"`
+//	Valute    []Valute
+//}
 
 type CreateUserRequest struct {
 	On_date string `xml:"On_date"`
@@ -108,6 +110,23 @@ type Country struct {
 	BG string
 	BA string
 	BB string
+}
+
+type Result struct {
+	Name, Description, URL string
+}
+
+//type SearchResults struct {
+//	ready   bool
+//	Query   string
+//	Results []Result
+//}
+
+type SearchResults struct {
+	name     string
+	Results1 []Result
+	Results2 []Result
+	Results3 []Result
 }
 
 var (
@@ -144,6 +163,14 @@ var upgrader = websocket.Upgrader{
 //	addr := mail.Address{String, ""}
 //	return strings.Trim(addr.String(), " <>")
 //}
+
+func urlEncoded(str string) (string, error) {
+	u, err := url.Parse(str)
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
+}
 
 func indexPage(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprint(w, "Test 1C")
@@ -219,6 +246,155 @@ func HashPassword(password string) (string, error) {
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+func wikipediaAPI(request string) (answer []string) {
+
+	//Создаем срез на 3 элемента
+	s := make([]string, 3)
+
+	//Отправляем запрос
+	if response, err := http.Get(request); err != nil {
+		s[0] = "Wikipedia is not respond"
+		return s
+		//fmt.Println("Wikipedia is not respond")
+	} else {
+		defer response.Body.Close()
+
+		//Считываем ответ
+		contents, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			//log.Fatal(err)
+			//fmt.Println(err)
+			s[0] = "Wikipedia is not respond"
+			return s
+		}
+
+		//Отправляем данные в структуру
+		//		sr := &SearchResults{}
+		//		if err = json.Unmarshal([]byte(contents), sr); err != nil {
+		//			s[0] = "Something going wrong, try to change your question"
+		//			fmt.Println(err)
+		//		}
+
+		//Отправляем данные в структуру
+
+		var sr []interface{}
+
+		if err = json.Unmarshal([]byte(contents), &sr); err != nil {
+			s[0] = "Something going wrong, try to change your question"
+			//fmt.Println(err)
+			return s
+		}
+
+		if len(sr) < 4 {
+			s[0] = "Something going wrong, try to change your question"
+			return s
+		}
+
+		keys, ok := sr[1].([]interface{})
+		if !ok {
+			s[0] = "Something going wrong, try to change your question"
+			//fmt.Println(err)
+			return s
+		}
+		values, ok := sr[2].([]interface{})
+		if !ok {
+			s[0] = "Something going wrong, try to change your question"
+			//fmt.Println(err)
+			return s
+		}
+		links, ok := sr[3].([]interface{})
+		if !ok {
+			s[0] = "Something going wrong, try to change your question"
+			//fmt.Println(err)
+			return s
+		}
+
+		if len(keys) != len(values) && len(values) != len(links) {
+			s[0] = "Something going wrong, try to change your question"
+			//fmt.Println(err)
+			return s
+		}
+
+		// find accurate wiki pages
+		for i := 0; i < len(keys); i++ {
+			//key := keys[i].(string)
+			val := values[i].(string)
+			link := links[i].(string)
+
+			//fmt.Println("key - ", key)
+			fmt.Println("val - ", val)
+			fmt.Println("link - ", link)
+			fmt.Println(val + " " + link)
+
+			//			if strings.Contains(val, "may refer to") {
+			//				continue
+			//			}
+			//			if !strings.Contains(link, "en.wikipedia.org") {
+			//				continue
+			//			}
+
+			s[i] = val + " " + link
+
+			//			found := false
+			//			for _, t := range tags {
+			//				if strings.Contains(val, t) {
+			//					found = true
+			//					break
+			//				}
+			//			}
+			//			if !found {
+			//				continue
+			//			}
+
+			//			ws := WikiSearch{
+			//				Key:   key,
+			//				Value: val,
+			//				Link:  link,
+			//			}
+			//			wSearch = append(wSearch, ws)
+		}
+
+		//		//fmt.Println("---Test---", sr[2])
+		//		keys, ok := sr[2].([]interface{})
+
+		//		if !ok {
+		//			s[0] = "Something going wrong, try to change your question"
+		//			return s
+		//		}
+
+		//		var counetr int = -1
+		//		for _, x := range keys {
+		//			switch value := x.(type) {
+		//			case string:
+		//				counetr++
+		//				s[counetr] = value
+		//			}
+		//		}
+
+		//		for _, x := range sr {
+		//			switch value := x.(type) {
+		//			case string:
+		//				s[1] = value
+		//			case []interface{}:
+		//				var counetr int = -1
+		//				for _, v := range value {
+		//					//fmt.Println(v.(string))
+		//					counetr++
+		//					s[counetr] = v.(string)
+
+		//				}
+		//			}
+		//		}
+
+		//		for i := range sr[2] {
+		//			s[i] = sr.Results1[i].URL
+		//		}
+
+	}
+
+	return s
 }
 
 //func deploy(app string, wg *sync.WaitGroup) {
@@ -817,8 +993,8 @@ func main() {
 	//	fmt.Println(string(body))
 	//	//io.Copy(os.Stdout, resp.Body)
 
-	//dialSocksProxy, err := proxy.SOCKS5("tcp", "47.254.134.144:8082", nil, proxy.Direct)
-	dialSocksProxy, err := proxy.SOCKS5("tcp", "51.68.142.150:9300", nil, proxy.Direct)
+	//dialSocksProxy, err := proxy.SOCKS5("tcp", "103.197.26.243:8888", nil, proxy.Direct)
+	dialSocksProxy, err := proxy.SOCKS5("tcp", "88.99.149.206:9050", nil, proxy.Direct)
 
 	if err != nil {
 		fmt.Println("Error connecting to proxy:", err)
@@ -859,30 +1035,79 @@ func main() {
 		// Текст сообщения
 		Text := update.Message.Text
 
-		//Проверка на тип не нужна т.к сейчас в бот не приходтя не текстовые команды... Они находятся в отдельных структурах update.Message.Photo
-		if reflect.TypeOf(update.Message.Text).Kind() != reflect.String {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Use the words for search.")
+		switch Text {
+		case "/start":
+
+			reply = "Hi, i'm a wikipedia bot, i can search information in a wikipedia, send me something what you want find in Wikipedia."
+
+			msg := tgbotapi.NewMessage(ChatID, reply)
+			msg.ReplyToMessageID = update.Message.MessageID
+
 			bot.Send(msg)
-			continue
+
+		case "/number_of_users":
+
+			reply = "Не реализовано"
+
+			msg := tgbotapi.NewMessage(ChatID, reply)
+			msg.ReplyToMessageID = update.Message.MessageID
+
+			bot.Send(msg)
+
+		default:
+
+			//Проверка на тип не нужна т.к сейчас в бот не приходтя не текстовые команды... Они находятся в отдельных структурах update.Message.Photo
+			if reflect.TypeOf(update.Message.Text).Kind() != reflect.String {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Use the words for search.")
+				bot.Send(msg)
+				continue
+			}
+
+			//				if update.Message.NewChatParticipant.UserName != "" {
+			//					// В чат вошел новый пользователь
+			//					// Поприветствуем его
+			//					reply = fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
+			//						update.Message.NewChatParticipant.UserName)
+			//				}
+
+			language := "ru"
+			url, err4 := urlEncoded(Text)
+			if err4 != nil {
+				fmt.Println(err4)
+			}
+			request := "https://" + language + ".wikipedia.org/w/api.php?action=opensearch&search=" + url + "&limit=3&origin=*&format=json"
+
+			message := wikipediaAPI(request)
+
+			for _, val := range message {
+
+				//Отправлем сообщение
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, val)
+				bot.Send(msg)
+				fmt.Println(val)
+			}
 		}
-
-		//				if update.Message.NewChatParticipant.UserName != "" {
-		//					// В чат вошел новый пользователь
-		//					// Поприветствуем его
-		//					reply = fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
-		//						update.Message.NewChatParticipant.UserName)
-		//				}
-
-		if Text != "" {
-			reply = Text
-		}
-
-		msg := tgbotapi.NewMessage(ChatID, reply)
-		msg.ReplyToMessageID = update.Message.MessageID
-
-		bot.Send(msg)
 
 	}
+
+	//------------------------------------------------------------------------------------------------------------------------------
+	//	//language := os.Getenv("LANGUAGE")
+	//	language := "ru"
+	//	url, err4 := urlEncoded("Москва")
+	//	if err4 != nil {
+	//		fmt.Println(err4)
+	//	}
+	//	request := "https://" + language + ".wikipedia.org/w/api.php?action=opensearch&search=" + url + "&limit=3&origin=*&format=json"
+
+	//	message := wikipediaAPI(request)
+
+	//	for _, val := range message {
+
+	//		//Отправлем сообщение
+	//		 msg := tgbotapi.NewMessage(update.Message.Chat.ID, val)
+	//		 bot.Send(msg)
+	//		fmt.Println(val)
+	//	}
 
 	//--------------- Конец работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
 
