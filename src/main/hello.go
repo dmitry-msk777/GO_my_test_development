@@ -11,7 +11,7 @@ import (
 
 	//"net/mail"
 	//"net/smtp"
-	"os"
+	//	"os"
 	"strings"
 
 	//"github.com/atotto/clipboard"
@@ -44,15 +44,56 @@ import (
 	"github.com/gorilla/websocket"
 
 	//"go.uber.org/ratelimit"
-	"github.com/Syfaro/telegram-bot-api"
+	//	"github.com/Syfaro/telegram-bot-api"
 	//"net/proxy"
 
-	"golang.org/x/net/proxy"
+	//	"golang.org/x/net/proxy"
 
-	"reflect"
+	//	"reflect"
 
 	//"github.com/carbocation/go-instagram/instagram"
+	"unsafe"
+
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/sys/windows"
+)
+
+const (
+	IMAGE_ICON      = 1
+	LR_DEFAULTSIZE  = 0x00000040
+	LR_LOADFROMFILE = 0x00000010
+
+	NIM_ADD        = 0x00000000
+	NIM_MODIFY     = 0x00000001
+	NIM_DELETE     = 0x00000002
+	NIM_SETFOCUS   = 0x00000003
+	NIM_SETVERSION = 0x00000004
+
+	NIF_MESSAGE  = 0x00000001
+	NIF_ICON     = 0x00000002
+	NIF_TIP      = 0x00000004
+	NIF_STATE    = 0x00000008
+	NIF_INFO     = 0x00000010
+	NIF_GUID     = 0x00000020
+	NIF_REALTIME = 0x00000040
+	NIF_SHOWTIP  = 0x00000080
+
+	NIS_HIDDEN     = 0x00000001
+	NIS_SHAREDICON = 0x00000002
+
+	NIIF_NONE               = 0x00000000
+	NIIF_INFO               = 0x00000001
+	NIIF_WARNING            = 0x00000002
+	NIIF_ERROR              = 0x00000003
+	NIIF_USER               = 0x00000004
+	NIIF_NOSOUND            = 0x00000010
+	NIIF_LARGE_ICON         = 0x00000020
+	NIIF_RESPECT_QUIET_TIME = 0x00000080
+	NIIF_ICON_MASK          = 0x0000000F
+
+	NIN_BALLOONSHOW      = 0x0402
+	NIN_BALLOONTIMEOUT   = 0x0404
+	NIN_BALLOONUSERCLICK = 0x0405
 )
 
 type Config struct {
@@ -112,6 +153,31 @@ type Country struct {
 	BB string
 }
 
+type GUID struct {
+	Data1 uint32
+	Data2 uint16
+	Data3 uint16
+	Data4 [8]byte
+}
+
+type NOTIFYICONDATA struct {
+	CbSize           uint32
+	HWnd             uintptr
+	UID              uint32
+	UFlags           uint32
+	UCallbackMessage uint32
+	HIcon            uintptr
+	SzTip            [128]uint16
+	DwState          uint32
+	DwStateMask      uint32
+	SzInfo           [256]uint16
+	UVersion         uint32
+	SzInfoTitle      [64]uint16
+	DwInfoFlags      uint32
+	GuidItem         GUID
+	HBalloonIcon     uintptr
+}
+
 type Result struct {
 	Name, Description, URL string
 }
@@ -141,6 +207,24 @@ var (
 	// key must be 16, 24 or 32 bytes long (AES-128, AES-192 or AES-256)
 	key   = []byte("super-secret-key")
 	store = sessions.NewCookieStore(key)
+)
+
+var (
+	libshell32  = windows.NewLazySystemDLL("shell32.dll")
+	libuser32   = windows.NewLazySystemDLL("user32.dll")
+	libkernel32 = windows.NewLazySystemDLL("kernel32.dll")
+
+	procShell_NotifyIconW = libshell32.NewProc("Shell_NotifyIconW")
+	procLoadImageW        = libuser32.NewProc("LoadImageW")
+	procRegisterClassExW  = libuser32.NewProc("RegisterClassExW")
+	procGetModuleHandleW  = libkernel32.NewProc("GetModuleHandleW")
+	procCreateWindowExW   = libuser32.NewProc("CreateWindowExW")
+	procDefWindowProcW    = libuser32.NewProc("DefWindowProcW")
+	procGetMessageW       = libuser32.NewProc("GetMessageW")
+	procTranslateMessage  = libuser32.NewProc("TranslateMessage")
+	procDispatchMessageW  = libuser32.NewProc("DispatchMessageW")
+	procPostQuitMessage   = libuser32.NewProc("PostQuitMessage")
+	procShowWindow        = libuser32.NewProc("ShowWindow")
 )
 
 var steps = []string{
@@ -395,6 +479,37 @@ func wikipediaAPI(request string) (answer []string) {
 	}
 
 	return s
+}
+
+func Shell_NotifyIcon(
+	dwMessage uint32,
+	lpData *NOTIFYICONDATA) (int32, error) {
+	r, _, err := procShell_NotifyIconW.Call(
+		uintptr(dwMessage),
+		uintptr(unsafe.Pointer(lpData)))
+	if r == 0 {
+		return 0, err
+	}
+	return int32(r), nil
+}
+
+func LoadImage(
+	hInst uintptr,
+	name *uint16,
+	type_ uint32,
+	cx, cy int32,
+	fuLoad uint32) (uintptr, error) {
+	r, _, err := procLoadImageW.Call(
+		hInst,
+		uintptr(unsafe.Pointer(name)),
+		uintptr(type_),
+		uintptr(cx),
+		uintptr(cy),
+		uintptr(fuLoad))
+	if r == 0 {
+		return 0, err
+	}
+	return r, nil
 }
 
 //func deploy(app string, wg *sync.WaitGroup) {
@@ -973,124 +1088,124 @@ func main() {
 	//--------------- Конец работа с "go.uber.org/ratelimit задержка в секундах -----------------
 
 	//--------------- Работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
-	file, _ := os.Open("./dndspellsbot/config.json")
-	decoder := json.NewDecoder(file)
-	configuration := Config{}
-	err2 := decoder.Decode(&configuration)
-	if err2 != nil {
-		log.Panic(err2)
-	}
-	fmt.Println(configuration.TelegramBotToken)
+	// file, _ := os.Open("./dndspellsbot/config.json")
+	// decoder := json.NewDecoder(file)
+	// configuration := Config{}
+	// err2 := decoder.Decode(&configuration)
+	// if err2 != nil {
+	// 	log.Panic(err2)
+	// }
+	// fmt.Println(configuration.TelegramBotToken)
 
-	//Стандартное обращение для получения тела страницы
-	//	resp, err := http.Get("https://www.google.ru")
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
+	// //Стандартное обращение для получения тела страницы
+	// //	resp, err := http.Get("https://www.google.ru")
+	// //	if err != nil {
+	// //		log.Fatal(err)
+	// //	}
 
-	//	defer resp.Body.Close()
-	//	body, err := ioutil.ReadAll(resp.Body)
-	//	fmt.Println(string(body))
-	//	//io.Copy(os.Stdout, resp.Body)
+	// //	defer resp.Body.Close()
+	// //	body, err := ioutil.ReadAll(resp.Body)
+	// //	fmt.Println(string(body))
+	// //	//io.Copy(os.Stdout, resp.Body)
 
-	//dialSocksProxy, err := proxy.SOCKS5("tcp", "103.197.26.243:8888", nil, proxy.Direct)
-	dialSocksProxy, err := proxy.SOCKS5("tcp", "88.99.149.206:9050", nil, proxy.Direct)
+	// //dialSocksProxy, err := proxy.SOCKS5("tcp", "103.197.26.243:8888", nil, proxy.Direct)
+	// dialSocksProxy, err := proxy.SOCKS5("tcp", "88.99.149.206:9050", nil, proxy.Direct)
 
-	if err != nil {
-		fmt.Println("Error connecting to proxy:", err)
-	}
+	// if err != nil {
+	// 	fmt.Println("Error connecting to proxy:", err)
+	// }
 
-	tr := &http.Transport{Dial: dialSocksProxy.Dial}
+	// tr := &http.Transport{Dial: dialSocksProxy.Dial}
 
-	// Create client
-	myClient := &http.Client{
-		Transport: tr,
-	}
+	// // Create client
+	// myClient := &http.Client{
+	// 	Transport: tr,
+	// }
 
-	bot, err := tgbotapi.NewBotAPIWithClient("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4", myClient)
-	if err != nil {
-		fmt.Println(err)
-	}
+	// bot, err := tgbotapi.NewBotAPIWithClient("808741510:AAECEpVU9cLIdJ0HsHpNASlolDVWYACgyA4", myClient)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
-	bot.Debug = true
-	fmt.Println("Authorized on account %s", bot.Self.UserName)
+	// bot.Debug = true
+	// fmt.Println("Authorized on account %s", bot.Self.UserName)
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	// u := tgbotapi.NewUpdate(0)
+	// u.Timeout = 60
 
-	updates, err := bot.GetUpdatesChan(u)
+	// updates, err := bot.GetUpdatesChan(u)
 
-	for update := range updates {
-		if update.Message == nil { // ignore any non-Message Updates
-			continue
-		}
+	// for update := range updates {
+	// 	if update.Message == nil { // ignore any non-Message Updates
+	// 		continue
+	// 	}
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+	// 	log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-		var reply string
-		var ChatID int64
+	// 	var reply string
+	// 	var ChatID int64
 
-		ChatID = update.Message.Chat.ID
+	// 	ChatID = update.Message.Chat.ID
 
-		// Текст сообщения
-		Text := update.Message.Text
+	// 	// Текст сообщения
+	// 	Text := update.Message.Text
 
-		switch Text {
-		case "/start":
+	// 	switch Text {
+	// 	case "/start":
 
-			reply = "Hi, i'm a wikipedia bot, i can search information in a wikipedia, send me something what you want find in Wikipedia."
+	// 		reply = "Hi, i'm a wikipedia bot, i can search information in a wikipedia, send me something what you want find in Wikipedia."
 
-			msg := tgbotapi.NewMessage(ChatID, reply)
-			msg.ReplyToMessageID = update.Message.MessageID
+	// 		msg := tgbotapi.NewMessage(ChatID, reply)
+	// 		msg.ReplyToMessageID = update.Message.MessageID
 
-			bot.Send(msg)
+	// 		bot.Send(msg)
 
-		case "/number_of_users":
+	// 	case "/number_of_users":
 
-			reply = "Не реализовано"
+	// 		reply = "Не реализовано"
 
-			msg := tgbotapi.NewMessage(ChatID, reply)
-			msg.ReplyToMessageID = update.Message.MessageID
+	// 		msg := tgbotapi.NewMessage(ChatID, reply)
+	// 		msg.ReplyToMessageID = update.Message.MessageID
 
-			bot.Send(msg)
+	// 		bot.Send(msg)
 
-		default:
+	// 	default:
 
-			//Проверка на тип не нужна т.к сейчас в бот не приходтя не текстовые команды... Они находятся в отдельных структурах update.Message.Photo
-			if reflect.TypeOf(update.Message.Text).Kind() != reflect.String {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Use the words for search.")
-				bot.Send(msg)
-				continue
-			}
+	// 		//Проверка на тип не нужна т.к сейчас в бот не приходтя не текстовые команды... Они находятся в отдельных структурах update.Message.Photo
+	// 		if reflect.TypeOf(update.Message.Text).Kind() != reflect.String {
+	// 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Use the words for search.")
+	// 			bot.Send(msg)
+	// 			continue
+	// 		}
 
-			//				if update.Message.NewChatParticipant.UserName != "" {
-			//					// В чат вошел новый пользователь
-			//					// Поприветствуем его
-			//					reply = fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
-			//						update.Message.NewChatParticipant.UserName)
-			//				}
+	// 		//				if update.Message.NewChatParticipant.UserName != "" {
+	// 		//					// В чат вошел новый пользователь
+	// 		//					// Поприветствуем его
+	// 		//					reply = fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
+	// 		//						update.Message.NewChatParticipant.UserName)
+	// 		//				}
 
-			language := "ru"
-			url, err4 := urlEncoded(Text)
-			if err4 != nil {
-				fmt.Println(err4)
-			}
-			request := "https://" + language + ".wikipedia.org/w/api.php?action=opensearch&search=" + url + "&limit=3&origin=*&format=json"
+	// 		language := "ru"
+	// 		url, err4 := urlEncoded(Text)
+	// 		if err4 != nil {
+	// 			fmt.Println(err4)
+	// 		}
+	// 		request := "https://" + language + ".wikipedia.org/w/api.php?action=opensearch&search=" + url + "&limit=3&origin=*&format=json"
 
-			message := wikipediaAPI(request)
+	// 		message := wikipediaAPI(request)
 
-			for _, val := range message {
+	// 		for _, val := range message {
 
-				//Отправлем сообщение
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, val)
-				bot.Send(msg)
-				fmt.Println(val)
-			}
-		}
+	// 			//Отправлем сообщение
+	// 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, val)
+	// 			bot.Send(msg)
+	// 			fmt.Println(val)
+	// 		}
+	// 	}
 
-	}
+	// }
 
-	//------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------Тест получения страницы с вики----------------------------------------------------------------------------------------
 	//	//language := os.Getenv("LANGUAGE")
 	//	language := "ru"
 	//	url, err4 := urlEncoded("Москва")
@@ -1110,6 +1225,29 @@ func main() {
 	//	}
 
 	//--------------- Конец работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
+
+	//--------------- Работа с Системным треем Tray Icons -----------------
+	var data NOTIFYICONDATA
+
+	data.CbSize = uint32(unsafe.Sizeof(data))
+	data.UFlags = NIF_ICON
+
+	icon, err := LoadImage(
+		0,
+		windows.StringToUTF16Ptr("icon.ico"),
+		IMAGE_ICON,
+		0,
+		0,
+		LR_DEFAULTSIZE|LR_LOADFROMFILE)
+	if err != nil {
+		panic(err)
+	}
+	data.HIcon = icon
+
+	if _, err := Shell_NotifyIcon(NIM_ADD, &data); err != nil {
+		panic(err)
+	}
+	//--------------- Конец работы с Системным треем Tray Icons -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
