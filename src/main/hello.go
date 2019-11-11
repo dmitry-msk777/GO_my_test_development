@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	//"github.com/atotto/clipboard"
-	//"time"
+	"time"
 	//"github.com/tiaguinho/gosoap"
 	//"encoding/xml"
 	//"github.com/achiku/soapc"
@@ -35,7 +35,7 @@ import (
 	//"fyne.io/fyne/app"
 	//"fyne.io/fyne/widget"
 	//	"math/rand"
-	//	"sync"
+	"sync"
 	//"github.com/gosuri/uiprogress"
 	//"github.com/gosuri/uiprogress/util/strutil"
 	//"github.com/gorilla/mux"
@@ -56,6 +56,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sys/windows"
+
+	"flag"
+	"net"
 )
 
 const (
@@ -280,6 +283,17 @@ func logging(f http.HandlerFunc) http.HandlerFunc {
 		log.Println(r.URL.Path)
 		f(w, r)
 	}
+}
+
+func isOpen(host string, port int, timeout time.Duration) bool {
+	time.Sleep(time.Millisecond * 1)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", host, port), timeout)
+	if err == nil {
+		_ = conn.Close()
+		return true
+	}
+
+	return false
 }
 
 func foo(w http.ResponseWriter, r *http.Request) {
@@ -1227,27 +1241,56 @@ func main() {
 	//--------------- Конец работа с Telegram Bot через "github.com/Syfaro/telegram-bot-api" -----------------
 
 	//--------------- Работа с Системным треем Tray Icons -----------------
-	var data NOTIFYICONDATA
+	// var data NOTIFYICONDATA
 
-	data.CbSize = uint32(unsafe.Sizeof(data))
-	data.UFlags = NIF_ICON
+	// data.CbSize = uint32(unsafe.Sizeof(data))
+	// data.UFlags = NIF_ICON
 
-	icon, err := LoadImage(
-		0,
-		windows.StringToUTF16Ptr("icon.ico"),
-		IMAGE_ICON,
-		0,
-		0,
-		LR_DEFAULTSIZE|LR_LOADFROMFILE)
-	if err != nil {
-		panic(err)
-	}
-	data.HIcon = icon
+	// icon, err := LoadImage(
+	// 	0,
+	// 	windows.StringToUTF16Ptr("icon.ico"),
+	// 	IMAGE_ICON,
+	// 	0,
+	// 	0,
+	// 	LR_DEFAULTSIZE|LR_LOADFROMFILE)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// data.HIcon = icon
 
-	if _, err := Shell_NotifyIcon(NIM_ADD, &data); err != nil {
-		panic(err)
-	}
+	// if _, err := Shell_NotifyIcon(NIM_ADD, &data); err != nil {
+	// 	panic(err)
+	// }
 	//--------------- Конец работы с Системным треем Tray Icons -----------------
+
+	//--------------- Работа с TCP scanner -----------------
+	hostname := flag.String("hostname", "", "hostname to test")
+	startPort := flag.Int("start-port", 1, "the port on which the scanning starts")
+	endPort := flag.Int("end-port", 10000, "the port from which the scanning ends")
+	timeout := flag.Duration("timeout", time.Millisecond*200, "timeout")
+	flag.Parse()
+
+	ports := []int{}
+
+	wg := &sync.WaitGroup{}
+	mutex := &sync.Mutex{}
+	for port := *startPort; port <= *endPort; port++ {
+		wg.Add(1)
+		go func(p int) {
+			opened := isOpen(*hostname, p, *timeout)
+			if opened {
+				mutex.Lock()
+				ports = append(ports, p)
+				mutex.Unlock()
+			}
+			wg.Done()
+		}(port)
+	}
+
+	wg.Wait()
+	fmt.Printf("opened ports: %v\n", ports)
+
+	//--------------- Конец Работа с TCP scanner -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
