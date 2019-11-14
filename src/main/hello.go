@@ -35,7 +35,7 @@ import (
 	//"fyne.io/fyne/app"
 	//"fyne.io/fyne/widget"
 	//	"math/rand"
-	"sync"
+	//	"sync"
 	//"github.com/gosuri/uiprogress"
 	//"github.com/gosuri/uiprogress/util/strutil"
 	//"github.com/gorilla/mux"
@@ -57,8 +57,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sys/windows"
 
-	"flag"
+	//	"flag"
 	"net"
+	//	"github.com/m7shapan/uuid"
 )
 
 const (
@@ -1263,34 +1264,37 @@ func main() {
 	// }
 	//--------------- Конец работы с Системным треем Tray Icons -----------------
 
-	//--------------- Работа с TCP scanner -----------------
-	hostname := flag.String("hostname", "", "hostname to test")
-	startPort := flag.Int("start-port", 1, "the port on which the scanning starts")
-	endPort := flag.Int("end-port", 10000, "the port from which the scanning ends")
-	timeout := flag.Duration("timeout", time.Millisecond*200, "timeout")
-	flag.Parse()
+	// //--------------- Работа с TCP scanner -----------------
+	// hostname := flag.String("localhost", "", "hostname to test")
+	// startPort := flag.Int("start-port", 1, "the port on which the scanning starts")
+	// endPort := flag.Int("end-port", 10000, "the port from which the scanning ends")
+	// timeout := flag.Duration("timeout", time.Millisecond*200, "timeout")
+	// flag.Parse()
 
-	ports := []int{}
+	// ports := []int{}
 
-	wg := &sync.WaitGroup{}
-	mutex := &sync.Mutex{}
-	for port := *startPort; port <= *endPort; port++ {
-		wg.Add(1)
-		go func(p int) {
-			opened := isOpen(*hostname, p, *timeout)
-			if opened {
-				mutex.Lock()
-				ports = append(ports, p)
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(port)
-	}
+	// wg := &sync.WaitGroup{}
+	// mutex := &sync.Mutex{}
+	// for port := *startPort; port <= *endPort; port++ {
+	// 	wg.Add(1)
+	// 	go func(p int) {
+	// 		opened := isOpen(*hostname, p, *timeout)
+	// 		if opened {
+	// 			mutex.Lock()
+	// 			ports = append(ports, p)
+	// 			mutex.Unlock()
+	// 		}
+	// 		wg.Done()
+	// 	}(port)
+	// }
 
-	wg.Wait()
-	fmt.Printf("opened ports: %v\n", ports)
+	// wg.Wait()
+	// fmt.Printf("opened ports: %v\n", ports)
+	// //--------------- Конец Работа с TCP scanner -----------------
 
-	//--------------- Конец Работа с TCP scanner -----------------
+	// //--------------- Работа с UUIDs -----------------
+	// fmt.Println(uuid.NewUUID()) // 2bf08894-47a3978-bbdd8c85-70d16847
+	// //--------------- Конец Работа с UUIDs -----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
