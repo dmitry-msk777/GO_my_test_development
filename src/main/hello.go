@@ -60,6 +60,9 @@ import (
 	//	"flag"
 	"net"
 	//	"github.com/m7shapan/uuid"
+	//	"regexp"
+	//"github.com/dmitry-msk777/GO_my_test_development"
+	//"github.com/dmitry-msk777/GO_my_test_development/src/main"
 )
 
 const (
@@ -1295,6 +1298,46 @@ func main() {
 	// //--------------- Работа с UUIDs -----------------
 	// fmt.Println(uuid.NewUUID()) // 2bf08894-47a3978-bbdd8c85-70d16847
 	// //--------------- Конец Работа с UUIDs -----------------
+
+	// //--------------- Работа с Regular Expressions -----------------
+	// match, _ := regexp.MatchString("p([a-z]+)ch", "peach")
+	// fmt.Println(match)
+
+	// r, _ := regexp.Compile("p([a-z]+)ch")
+
+	// fmt.Println(r.MatchString("peach"))
+
+	// fmt.Println(r.FindString("peach punch"))
+
+	// fmt.Println(r.FindStringIndex("peach punch"))
+
+	// fmt.Println(r.FindStringSubmatch("peach punch"))
+
+	// fmt.Println(r.FindStringSubmatchIndex("peach punch"))
+
+	// fmt.Println(r.FindAllString("peach punch pinch", -1))
+
+	// fmt.Println(r.FindAllStringSubmatchIndex(
+	// 	"peach punch pinch", -1))
+
+	// fmt.Println(r.FindAllString("peach punch pinch", 2))
+
+	// fmt.Println(r.Match([]byte("peach")))
+
+	// r = regexp.MustCompile("p([a-z]+)ch")
+	// fmt.Println(r)
+
+	// fmt.Println(r.ReplaceAllString("a peach", "<fruit>"))
+
+	// in := []byte("a peach")
+	// out := r.ReplaceAllFunc(in, bytes.ToUpper)
+	// fmt.Println(string(out))
+	// //--------------- Конец Работа с Regular Expressions -----------------
+
+	// //--------------- Работа с Моим же репозиторием на GitHub -----------------
+	// Необходим модуль где в названии модуля используется название переменной, которая становится доступной после импорта моего репозитория
+	//main777.
+	// //--------------- Конец Работа с Моим же репозиторием на GitHub-----------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
