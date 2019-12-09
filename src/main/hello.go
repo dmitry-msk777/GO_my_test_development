@@ -57,12 +57,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sys/windows"
 
-	//	"flag"
+	"flag"
 	"net"
+
 	//	"github.com/m7shapan/uuid"
 	//	"regexp"
 	//"github.com/dmitry-msk777/GO_my_test_development"
 	//"github.com/dmitry-msk777/GO_my_test_development/src/main"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"math/rand"
 )
 
 const (
@@ -249,6 +255,16 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+var (
+	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "myapp_processed_ops_total_666",
+		Help: "666 looser",
+	})
+)
+
+var addr = flag.String("listen-address", ":8080",
+	"The address to listen on for HTTP requests.")
+
 //func encodeRFC2047(String string) string {
 //	// use mail's rfc2047 to encode any string
 //	addr := mail.Address{String, ""}
@@ -261,6 +277,15 @@ func urlEncoded(str string) (string, error) {
 		return "", err
 	}
 	return u.String(), nil
+}
+
+func recordMetrics() {
+	go func() {
+		for {
+			opsProcessed.Inc()
+			time.Sleep(2 * time.Second)
+		}
+	}()
 }
 
 func indexPage(w http.ResponseWriter, r *http.Request) {
@@ -1339,9 +1364,78 @@ func main() {
 	//main777.
 	// //--------------- Конец Работа с Моим же репозиторием на GitHub-----------------
 
-	http.HandleFunc("/", indexPage)
-	http.HandleFunc("/products", ProductsHandler)
-	fmt.Println("Start 1C Port 8081")
-	http.ListenAndServe(":8081", nil)
+	// //--------------- Работа с Prometheus -----------------
+	// recordMetrics()
+	// http.Handle("/metrics", promhttp.Handler())
+	// http.ListenAndServe(":2112", nil)
+	flag.Parse()
+
+	usersRegistered := prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "users_registered",
+		})
+	prometheus.MustRegister(usersRegistered)
+
+	usersOnline := prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "users_online",
+		})
+	prometheus.MustRegister(usersOnline)
+
+	requestProcessingTimeSummaryMs := prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name:       "request_processing_time_summary_ms",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		})
+	prometheus.MustRegister(requestProcessingTimeSummaryMs)
+
+	requestProcessingTimeHistogramMs := prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "request_processing_time_histogram_ms",
+			Buckets: prometheus.LinearBuckets(0, 10, 20),
+		})
+	prometheus.MustRegister(requestProcessingTimeHistogramMs)
+
+	go func() {
+		for {
+			usersRegistered.Inc() // or: Add(5)
+			time.Sleep(1000 * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		for {
+			for i := 0; i < 10000; i++ {
+				usersOnline.Set(float64(i)) // or: Inc(), Dec(), Add(5), Dec(5)
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
+	}()
+
+	go func() {
+		src := rand.NewSource(time.Now().UnixNano())
+		rnd := rand.New(src)
+		for {
+			obs := float64(100 + rnd.Intn(30))
+			requestProcessingTimeSummaryMs.Observe(obs)
+			requestProcessingTimeHistogramMs.Observe(obs)
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
+
+	http.Handle("/metrics", promhttp.Handler())
+
+	log.Printf("Starting web server at %s\n", *addr)
+	err := http.ListenAndServe(*addr, nil)
+	if err != nil {
+		log.Printf("http.ListenAndServer: %v\n", err)
+	}
+
+	// //--------------- Конец Работа с Prometheus -----------------
+
+	// http.HandleFunc("/", indexPage)
+	// http.HandleFunc("/products", ProductsHandler)
+	// fmt.Println("Start 1C Port 8081")
+	// http.ListenAndServe(":8081", nil)
 
 }
