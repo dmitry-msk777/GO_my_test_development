@@ -64,11 +64,13 @@ import (
 	//	"regexp"
 	//"github.com/dmitry-msk777/GO_my_test_development"
 	//"github.com/dmitry-msk777/GO_my_test_development/src/main"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"math/rand"
+	//"github.com/prometheus/client_golang/prometheus"
+	//"github.com/prometheus/client_golang/prometheus/promauto"
+	//"github.com/prometheus/client_golang/prometheus/promhttp"
+	//"math/rand"
+	"crypto/md5"
+	"encoding/hex"
+	"runtime"
 )
 
 const (
@@ -127,6 +129,11 @@ type ContactDetails struct {
 	Email   string
 	Subject string
 	Message string
+}
+
+type part struct {
+	start string
+	end   byte
 }
 
 type Valute struct {
@@ -255,12 +262,12 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-var (
-	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "myapp_processed_ops_total_666",
-		Help: "666 looser",
-	})
-)
+// var (
+// 	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "myapp_processed_ops_total_666",
+// 		Help: "666 looser",
+// 	})
+// )
 
 var addr = flag.String("listen-address", ":8080",
 	"The address to listen on for HTTP requests.")
@@ -271,6 +278,8 @@ var addr = flag.String("listen-address", ":8080",
 //	return strings.Trim(addr.String(), " <>")
 //}
 
+var hash [16]byte
+
 func urlEncoded(str string) (string, error) {
 	u, err := url.Parse(str)
 	if err != nil {
@@ -279,14 +288,14 @@ func urlEncoded(str string) (string, error) {
 	return u.String(), nil
 }
 
-func recordMetrics() {
-	go func() {
-		for {
-			opsProcessed.Inc()
-			time.Sleep(2 * time.Second)
-		}
-	}()
-}
+// func recordMetrics() {
+// 	go func() {
+// 		for {
+// 			opsProcessed.Inc()
+// 			time.Sleep(2 * time.Second)
+// 		}
+// 	}()
+// }
 
 func indexPage(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprint(w, "Test 1C")
@@ -570,6 +579,53 @@ func LoadImage(
 //		time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000)))
 //	}
 //}
+
+// worker по порядку сравнивает хэш каждого пароля с искомым
+func worker(in <-chan part, out chan<- string) {
+	var p part
+	var b []byte
+	for {
+		p = <-in
+		b = []byte(p.start)
+		for b[0] != p.end {
+			if md5.Sum(b) == hash {
+				out <- string(b)
+				return
+			}
+			nextPass(b)
+		}
+	}
+}
+
+func nextByte(b byte) byte {
+	switch b {
+	case 'z':
+		return '0'
+	case '9':
+		return 'a'
+	default:
+		return b + 1
+	}
+}
+
+func nextPass(b []byte) {
+	for i := len(b) - 1; i >= 0; i-- {
+		b[i] = nextByte(b[i])
+		if b[i] != '0' {
+			return
+		}
+	}
+}
+
+func generator(in chan<- part) {
+	start := []byte("00000")
+	var b byte
+	for {
+		b = nextByte(start[0])
+		in <- part{string(start), b}
+		start[0] = b
+	}
+}
 
 func main() {
 
@@ -1365,73 +1421,95 @@ func main() {
 	// //--------------- Конец Работа с Моим же репозиторием на GitHub-----------------
 
 	// //--------------- Работа с Prometheus -----------------
-	// recordMetrics()
+
+	// flag.Parse()
+
+	// usersRegistered := prometheus.NewCounter(
+	// 	prometheus.CounterOpts{
+	// 		Name: "users_registered",
+	// 	})
+	// prometheus.MustRegister(usersRegistered)
+
+	// usersOnline := prometheus.NewGauge(
+	// 	prometheus.GaugeOpts{
+	// 		Name: "users_online",
+	// 	})
+	// prometheus.MustRegister(usersOnline)
+
+	// requestProcessingTimeSummaryMs := prometheus.NewSummary(
+	// 	prometheus.SummaryOpts{
+	// 		Name:       "request_processing_time_summary_ms",
+	// 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+	// 	})
+	// prometheus.MustRegister(requestProcessingTimeSummaryMs)
+
+	// requestProcessingTimeHistogramMs := prometheus.NewHistogram(
+	// 	prometheus.HistogramOpts{
+	// 		Name:    "request_processing_time_histogram_ms",
+	// 		Buckets: prometheus.LinearBuckets(0, 10, 20),
+	// 	})
+	// prometheus.MustRegister(requestProcessingTimeHistogramMs)
+
+	// go func() {
+	// 	for {
+	// 		usersRegistered.Inc() // or: Add(5)
+	// 		time.Sleep(1000 * time.Millisecond)
+	// 	}
+	// }()
+
+	// go func() {
+	// 	for {
+	// 		for i := 0; i < 10000; i++ {
+	// 			usersOnline.Set(float64(i)) // or: Inc(), Dec(), Add(5), Dec(5)
+	// 			time.Sleep(10 * time.Millisecond)
+	// 		}
+	// 	}
+	// }()
+
+	// go func() {
+	// 	src := rand.NewSource(time.Now().UnixNano())
+	// 	rnd := rand.New(src)
+	// 	for {
+	// 		obs := float64(100 + rnd.Intn(30))
+	// 		requestProcessingTimeSummaryMs.Observe(obs)
+	// 		requestProcessingTimeHistogramMs.Observe(obs)
+	// 		time.Sleep(10 * time.Millisecond)
+	// 	}
+	// }()
+
 	// http.Handle("/metrics", promhttp.Handler())
-	// http.ListenAndServe(":2112", nil)
-	flag.Parse()
 
-	usersRegistered := prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "users_registered",
-		})
-	prometheus.MustRegister(usersRegistered)
-
-	usersOnline := prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Name: "users_online",
-		})
-	prometheus.MustRegister(usersOnline)
-
-	requestProcessingTimeSummaryMs := prometheus.NewSummary(
-		prometheus.SummaryOpts{
-			Name:       "request_processing_time_summary_ms",
-			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-		})
-	prometheus.MustRegister(requestProcessingTimeSummaryMs)
-
-	requestProcessingTimeHistogramMs := prometheus.NewHistogram(
-		prometheus.HistogramOpts{
-			Name:    "request_processing_time_histogram_ms",
-			Buckets: prometheus.LinearBuckets(0, 10, 20),
-		})
-	prometheus.MustRegister(requestProcessingTimeHistogramMs)
-
-	go func() {
-		for {
-			usersRegistered.Inc() // or: Add(5)
-			time.Sleep(1000 * time.Millisecond)
-		}
-	}()
-
-	go func() {
-		for {
-			for i := 0; i < 10000; i++ {
-				usersOnline.Set(float64(i)) // or: Inc(), Dec(), Add(5), Dec(5)
-				time.Sleep(10 * time.Millisecond)
-			}
-		}
-	}()
-
-	go func() {
-		src := rand.NewSource(time.Now().UnixNano())
-		rnd := rand.New(src)
-		for {
-			obs := float64(100 + rnd.Intn(30))
-			requestProcessingTimeSummaryMs.Observe(obs)
-			requestProcessingTimeHistogramMs.Observe(obs)
-			time.Sleep(10 * time.Millisecond)
-		}
-	}()
-
-	http.Handle("/metrics", promhttp.Handler())
-
-	log.Printf("Starting web server at %s\n", *addr)
-	err := http.ListenAndServe(*addr, nil)
-	if err != nil {
-		log.Printf("http.ListenAndServer: %v\n", err)
-	}
+	// log.Printf("Starting web server at %s\n", *addr)
+	// err := http.ListenAndServe(*addr, nil)
+	// if err != nil {
+	// 	log.Printf("http.ListenAndServer: %v\n", err)
+	// }
 
 	// //--------------- Конец Работа с Prometheus -----------------
+
+	// //--------------- Работа с многопоточность и паролями -----------------
+	t := time.Now()
+	const hashString = "95ebc3c7b3b9f1d2c40fec14415d3cb8" // "zzzzz"
+	h, err := hex.DecodeString(hashString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	copy(hash[:], h)
+
+	num := runtime.NumCPU()
+	runtime.GOMAXPROCS(num)
+
+	in := make(chan part)
+	out := make(chan string)
+	go generator(in)
+	for i := 0; i < num; i++ {
+		go worker(in, out)
+	}
+	fmt.Println("Пароль: ", <-out)
+	fmt.Println("Время поиска: ", time.Since(t))
+
+	// //--------------- Конец Работа с многопоточность и паролями -----------------
 
 	// http.HandleFunc("/", indexPage)
 	// http.HandleFunc("/products", ProductsHandler)
