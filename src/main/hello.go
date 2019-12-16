@@ -69,8 +69,8 @@ import (
 	//"github.com/prometheus/client_golang/prometheus/promhttp"
 	//"math/rand"
 	"crypto/md5"
-	"encoding/hex"
-	"runtime"
+	//	"encoding/hex"
+	//"runtime"
 )
 
 const (
@@ -1488,32 +1488,31 @@ func main() {
 	// //--------------- Конец Работа с Prometheus -----------------
 
 	// //--------------- Работа с многопоточность и паролями -----------------
-	t := time.Now()
-	const hashString = "95ebc3c7b3b9f1d2c40fec14415d3cb8" // "zzzzz"
-	h, err := hex.DecodeString(hashString)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// t := time.Now()
+	// const hashString = "95ebc3c7b3b9f1d2c40fec14415d3cb8" // "zzzzz"
+	// h, err := hex.DecodeString(hashString)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	copy(hash[:], h)
+	// copy(hash[:], h)
 
-	num := runtime.NumCPU()
-	runtime.GOMAXPROCS(num)
+	// num := runtime.NumCPU()
+	// runtime.GOMAXPROCS(num)
 
-	in := make(chan part)
-	out := make(chan string)
-	go generator(in)
-	for i := 0; i < num; i++ {
-		go worker(in, out)
-	}
-	fmt.Println("Пароль: ", <-out)
-	fmt.Println("Время поиска: ", time.Since(t))
-
+	// in := make(chan part)
+	// out := make(chan string)
+	// go generator(in)
+	// for i := 0; i < num; i++ {
+	// 	go worker(in, out)
+	// }
+	// fmt.Println("Пароль: ", <-out)
+	// fmt.Println("Время поиска: ", time.Since(t))
 	// //--------------- Конец Работа с многопоточность и паролями -----------------
 
-	// http.HandleFunc("/", indexPage)
-	// http.HandleFunc("/products", ProductsHandler)
-	// fmt.Println("Start 1C Port 8081")
-	// http.ListenAndServe(":8081", nil)
+	http.HandleFunc("/", indexPage)
+	http.HandleFunc("/products", ProductsHandler)
+	fmt.Println("Start 1C Port 8081")
+	http.ListenAndServe(":8081", nil)
 
 }
