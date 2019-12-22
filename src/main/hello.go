@@ -1494,6 +1494,7 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
+<<<<<<< HEAD
 
 	// copy(hash[:], h)
 
@@ -1508,7 +1509,22 @@ func main() {
 	// }
 	// fmt.Println("Пароль: ", <-out)
 	// fmt.Println("Время поиска: ", time.Since(t))
+=======
 
+	// copy(hash[:], h)
+
+	// num := runtime.NumCPU()
+	// runtime.GOMAXPROCS(num)
+>>>>>>> 6d73b388bed16d90909f81027e242f648ed54ed6
+
+	// in := make(chan part)
+	// out := make(chan string)
+	// go generator(in)
+	// for i := 0; i < num; i++ {
+	// 	go worker(in, out)
+	// }
+	// fmt.Println("Пароль: ", <-out)
+	// fmt.Println("Время поиска: ", time.Since(t))
 	// //--------------- Конец Работа с многопоточность и паролями -----------------
 
 	http.HandleFunc("/", indexPage)
