@@ -1532,6 +1532,8 @@ func main() {
 
 	//--------------------- Работа с CouchDB NoSQL "github.com/go-kivik/kivik" ---------------------------
 
+	fmt.Println("Test debug visual studio")
+
 	client, err := kivik.New("couch", "http://localhost:5984/")
 	if err != nil {
 		panic(err)
@@ -1543,12 +1545,12 @@ func main() {
 	}
 
 	doc := map[string]interface{}{
-		"_id":      "cow",
+		"_id":      "cow3",
 		"feet":     4,
 		"greeting": "moo",
 	}
 
-	rev, err := db.Put(context.TODO(), "cow", doc)
+	rev, err := db.Put(context.TODO(), "cow3", doc)
 	if err != nil {
 		panic(err)
 	}
