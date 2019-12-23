@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+
 	//"io"
 
 	//"encoding/base64"
@@ -71,6 +73,10 @@ import (
 	"crypto/md5"
 	//	"encoding/hex"
 	//"runtime"
+
+	//"github.com/flimzy/kivik"       // Stable version of Kivik
+	_ "github.com/go-kivik/couchdb" // The CouchDB driver
+	"github.com/go-kivik/kivik"     // Development version of Kivik
 )
 
 const (
@@ -1494,7 +1500,6 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
-<<<<<<< HEAD
 
 	// copy(hash[:], h)
 
@@ -1509,13 +1514,11 @@ func main() {
 	// }
 	// fmt.Println("Пароль: ", <-out)
 	// fmt.Println("Время поиска: ", time.Since(t))
-=======
 
 	// copy(hash[:], h)
 
 	// num := runtime.NumCPU()
 	// runtime.GOMAXPROCS(num)
->>>>>>> 6d73b388bed16d90909f81027e242f648ed54ed6
 
 	// in := make(chan part)
 	// out := make(chan string)
@@ -1526,6 +1529,32 @@ func main() {
 	// fmt.Println("Пароль: ", <-out)
 	// fmt.Println("Время поиска: ", time.Since(t))
 	// //--------------- Конец Работа с многопоточность и паролями -----------------
+
+	//--------------------- Работа с CouchDB NoSQL "github.com/go-kivik/kivik" ---------------------------
+
+	client, err := kivik.New("couch", "http://localhost:5984/")
+	if err != nil {
+		panic(err)
+	}
+
+	db := client.DB(context.TODO(), "test777")
+	if err != nil {
+		panic(err)
+	}
+
+	doc := map[string]interface{}{
+		"_id":      "cow",
+		"feet":     4,
+		"greeting": "moo",
+	}
+
+	rev, err := db.Put(context.TODO(), "cow", doc)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Cow inserted with revision %s\n", rev)
+
+	//--------------------- Конец Работа с CouchDB NoSQL "github.com/go-kivik/kivik" ---------------------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
