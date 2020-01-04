@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	//"io"
@@ -45,6 +44,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 
+	//"github.com/olivere/elastic"
 	//"go.uber.org/ratelimit"
 	//	"github.com/Syfaro/telegram-bot-api"
 	//"net/proxy"
@@ -76,7 +76,10 @@ import (
 
 	//"github.com/flimzy/kivik"       // Stable version of Kivik
 	_ "github.com/go-kivik/couchdb" // The CouchDB driver
-	"github.com/go-kivik/kivik"     // Development version of Kivik
+	// Development version of Kivik
+	//"github.com/streadway/amqp"
+	//"github.com/olivere/elastic"
+	// "gopkg.in/olivere/elastic.v6"
 )
 
 const (
@@ -119,6 +122,12 @@ const (
 
 type Config struct {
 	TelegramBotToken string
+}
+
+type Tweet struct {
+	User     string `json:"user"`
+	Message  string `json:"message"`
+	Retweets int64  `json:"retweets"`
 }
 
 type Todo struct {
@@ -1530,33 +1539,342 @@ func main() {
 	// fmt.Println("Время поиска: ", time.Since(t))
 	// //--------------- Конец Работа с многопоточность и паролями -----------------
 
-	//--------------------- Работа с CouchDB NoSQL "github.com/go-kivik/kivik" ---------------------------
+	// //--------------------- Работа с CouchDB NoSQL "github.com/go-kivik/kivik" ---------------------------
 
-	fmt.Println("Test debug visual studio")
+	// fmt.Println("Test debug visual studio")
 
-	client, err := kivik.New("couch", "http://localhost:5984/")
-	if err != nil {
-		panic(err)
-	}
+	// client, err := kivik.New("couch", "http://localhost:5984/")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	db := client.DB(context.TODO(), "test777")
-	if err != nil {
-		panic(err)
-	}
+	// db := client.DB(context.TODO(), "test777")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	doc := map[string]interface{}{
-		"_id":      "cow5",
-		"feet":     4,
-		"greeting": "moo",
-	}
+	// doc := map[string]interface{}{
+	// 	"_id":      "cow5",
+	// 	"feet":     4,
+	// 	"greeting": "moo",
+	// }
 
-	rev, err := db.Put(context.TODO(), "cow5", doc)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Cow inserted with revision %s\n", rev)
+	// rev, err := db.Put(context.TODO(), "cow5", doc)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Printf("Cow inserted with revision %s\n", rev)
 
-	//--------------------- Конец Работа с CouchDB NoSQL "github.com/go-kivik/kivik" ---------------------------
+	// //--------------------- Конец Работа с CouchDB NoSQL "github.com/go-kivik/kivik" ---------------------------
+
+	// //--------------------- Работа с rabbitmq через "github.com/streadway/amqp" --------------------------------
+
+	// conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	// if err != nil {
+	// 	fmt.Println("Failed to connect to RabbitMQ")
+	// 	panic(err)
+	// }
+	// defer conn.Close()
+
+	// ch, err := conn.Channel()
+	// if err != nil {
+	// 	fmt.Println("Failed to open a channel")
+	// 	panic(err)
+	// }
+	// defer ch.Close()
+
+	// //Sending
+	// // q, err := ch.QueueDeclare(
+	// // 	"hello", // name
+	// // 	false,   // durable
+	// // 	false,   // delete when unused
+	// // 	false,   // exclusive
+	// // 	false,   // no-wait
+	// // 	nil,     // arguments
+	// // )
+	// // if err != nil {
+	// // 	fmt.Println("Failed to declare a queue")
+	// // 	panic(err)
+	// // }
+
+	// // body := "Hello World!"
+	// // err = ch.Publish(
+	// // 	"",     // exchange
+	// // 	q.Name, // routing key
+	// // 	false,  // mandatory
+	// // 	false,  // immediate
+	// // 	amqp.Publishing{
+	// // 		ContentType: "text/plain",
+	// // 		Body:        []byte(body),
+	// // 	})
+
+	// // if err != nil {
+	// // 	fmt.Println("Failed to publish a message")
+	// // 	panic(err)
+	// // }
+
+	// //Receiving
+
+	// q, err := ch.QueueDeclare(
+	// 	"hello", // name
+	// 	false,   // durable
+	// 	false,   // delete when unused
+	// 	false,   // exclusive
+	// 	false,   // no-wait
+	// 	nil,     // arguments
+	// )
+	// if err != nil {
+	// 	fmt.Println("Failed to declare a queue")
+	// 	panic(err)
+	// }
+
+	// msgs, err := ch.Consume(
+	// 	q.Name, // queue
+	// 	"",     // consumer
+	// 	true,   // auto-ack
+	// 	false,  // exclusive
+	// 	false,  // no-local
+	// 	false,  // no-wait
+	// 	nil,    // args
+	// )
+
+	// if err != nil {
+	// 	fmt.Println("Failed to register a consumer")
+	// 	panic(err)
+	// }
+
+	// forever := make(chan bool)
+
+	// go func() {
+	// 	forever <- true
+	// 	for d := range msgs {
+	// 		log.Printf("Received a message: %s", d.Body)
+	// 		fmt.Println("Received a message: %s", d.Body)
+	// 		forever <- false
+	// 	}
+	// 	forever <- false
+	// }()
+
+	// log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	// //<-forever
+	// fmt.Println(<-forever)
+
+	// //--------------------- Конец работа с rabbitmq через "github.com/streadway/amqp" --------------------------------
+
+	//--------------------- Работа с ElasticSerch через "gopkg.in/olivere/elastic.v6" --------------------------------
+	// Create a client and connect to http://192.168.2.10:9201
+	//client, err := elastic.NewClient(elastic.SetURL("http://127.0.0.1:32784"))
+
+	// client, err := elastic.NewClient(elastic.SetSniff(false),
+	// 	elastic.SetURL("http://127.0.0.1:32784", "http://127.0.0.1:32783"))
+	// // elastic.SetBasicAuth("user", "secret"))
+	// if err != nil {
+	// 	//fmt.Println("1")
+	// 	fmt.Println(err)
+	// 	panic(err)
+	// }
+
+	// // Getting the ES version number is quite common, so there's a shortcut
+	// esversion, err := client.ElasticsearchVersion("http://127.0.0.1:32784")
+	// if err != nil {
+	// 	// Handle error
+	// 	panic(err)
+	// }
+	// fmt.Printf("Elasticsearch version %s\n", esversion)
+
+	// exists, err := client.IndexExists("twitter").Do(context.Background()) //twitter
+	// if err != nil {
+	// 	//fmt.Println("2")
+	// 	fmt.Println(err)
+	// 	panic(err)
+	// }
+	// // if !exists {
+	// // 	//fmt.Println("3")
+	// // 	fmt.Println(err)
+	// // 	panic(err)
+	// // }
+
+	// if !exists {
+	// 	// Create a new index.
+	// 	mapping := `
+	// {
+	// 	"settings":{
+	// 		"number_of_shards":1,
+	// 		"number_of_replicas":0
+	// 	},
+	// 	"mappings":{
+	// 		"doc":{
+	// 			"properties":{
+	// 				"user":{
+	// 					"type":"keyword"
+	// 				},
+	// 				"message":{
+	// 					"type":"text",
+	// 					"store": true,
+	// 					"fielddata": true
+	// 				},
+	// 			"retweets":{
+	// 				"type":"long"
+	// 			},
+	// 				"tags":{
+	// 					"type":"keyword"
+	// 				},
+	// 				"location":{
+	// 					"type":"geo_point"
+	// 				},
+	// 				"suggest_field":{
+	// 					"type":"completion"
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// `
+	// 	createIndex, err := client.CreateIndex("twitter").Body(mapping).IncludeTypeName(true).Do(context.Background())
+	// 	if err != nil {
+	// 		// Handle error
+	// 		panic(err)
+	// 	}
+	// 	if !createIndex.Acknowledged {
+	// 		// Not acknowledged
+	// 	}
+	// }
+
+	// // Index a tweet (using JSON serialization)
+	// tweet1 := Tweet{User: "olivere", Message: "Take Five", Retweets: 0}
+	// put1, err := client.Index().
+	// 	Index("twitter").
+	// 	Type("doc").
+	// 	Id("1").
+	// 	BodyJson(tweet1).
+	// 	Do(context.Background())
+	// if err != nil {
+	// 	// Handle error
+	// 	fmt.Println(err)
+	// 	panic(err)
+	// }
+	// fmt.Printf("Indexed tweet %s to index %s, type %s\n", put1.Id, put1.Index, put1.Type)
+
+	// // Index a second tweet (by string)
+	// tweet2 := `{"user" : "olivere", "message" : "It's a Raggy Waltz"}`
+	// put2, err := client.Index().
+	// 	Index("twitter").
+	// 	Type("doc").
+	// 	Id("2").
+	// 	BodyString(tweet2).
+	// 	Do(context.Background())
+	// if err != nil {
+	// 	// Handle error
+	// 	panic(err)
+	// }
+	// fmt.Printf("Indexed tweet %s to index %s, type %s\n", put2.Id, put2.Index, put2.Type)
+
+	// // Get tweet with specified ID
+	// get1, err := client.Get().
+	// 	Index("twitter").
+	// 	Type("doc").
+	// 	Id("1").
+	// 	Do(context.Background())
+	// if err != nil {
+	// 	switch {
+	// 	case elastic.IsNotFound(err):
+	// 		panic(fmt.Sprintf("Document not found: %v", err))
+	// 	case elastic.IsTimeout(err):
+	// 		panic(fmt.Sprintf("Timeout retrieving document: %v", err))
+	// 	case elastic.IsConnErr(err):
+	// 		panic(fmt.Sprintf("Connection problem: %v", err))
+	// 	default:
+	// 		// Some other kind of error
+	// 		panic(err)
+	// 	}
+	// }
+	// fmt.Printf("Got document %s in version %d from index %s, type %s\n", get1.Id, get1.Version, get1.Index, get1.Type)
+
+	// // Flush to make sure the documents got written.
+	// _, err = client.Flush().Index("twitter").Do(context.Background())
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// // Search with a term query
+	// termQuery := elastic.NewTermQuery("user", "olivere")
+	// searchResult, err := client.Search().
+	// 	Index("twitter").        // search in index "twitter"
+	// 	Query(termQuery).        // specify the query
+	// 	Sort("user", true).      // sort by "user" field, ascending
+	// 	From(0).Size(10).        // take documents 0-9
+	// 	Pretty(true).            // pretty print request and response JSON
+	// 	Do(context.Background()) // execute
+	// if err != nil {
+	// 	// Handle error
+	// 	panic(err)
+	// }
+
+	// // searchResult is of type SearchResult and returns hits, suggestions,
+	// // and all kinds of other information from Elasticsearch.
+	// fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
+
+	// // Each is a convenience function that iterates over hits in a search result.
+	// // It makes sure you don't need to check for nil values in the response.
+	// // However, it ignores errors in serialization. If you want full control
+	// // over iterating the hits, see below.
+	// var ttyp Tweet
+	// for _, item := range searchResult.Each(reflect.TypeOf(ttyp)) {
+	// 	t := item.(Tweet)
+	// 	fmt.Printf("Tweet by %s: %s\n", t.User, t.Message)
+	// }
+	// // TotalHits is another convenience function that works even when something goes wrong.
+	// fmt.Printf("Found a total of %d tweets\n", searchResult.TotalHits())
+
+	// // Here's how you iterate through results with full control over each step.
+	// if searchResult.Hits.TotalHits > 0 {
+	// 	fmt.Printf("Found a total of %d tweets\n", searchResult.Hits.TotalHits)
+
+	// 	// Iterate through results
+	// 	for _, hit := range searchResult.Hits.Hits {
+	// 		// hit.Index contains the name of the index
+
+	// 		// Deserialize hit.Source into a Tweet (could also be just a map[string]interface{}).
+	// 		var t Tweet
+	// 		err := json.Unmarshal(*hit.Source, &t)
+	// 		if err != nil {
+	// 			// Deserialization failed
+	// 		}
+
+	// 		// Work with tweet
+	// 		fmt.Printf("Tweet by %s: %s\n", t.User, t.Message)
+	// 	}
+	// } else {
+	// 	// No hits
+	// 	fmt.Print("Found no tweets\n")
+	// }
+
+	// // Update a tweet by the update API of Elasticsearch.
+	// // We just increment the number of retweets.
+	// script := elastic.NewScript("ctx._source.retweets += params.num").Param("num", 1)
+	// update, err := client.Update().Index("twitter").Type("doc").Id("1").
+	// 	Script(script).
+	// 	Upsert(map[string]interface{}{"retweets": 0}).
+	// 	Do(context.Background())
+	// if err != nil {
+	// 	// Handle error
+	// 	panic(err)
+	// }
+	// fmt.Printf("New version of tweet %q is now %d", update.Id, update.Version)
+
+	// // ...
+
+	// // Delete an index.
+	// deleteIndex, err := client.DeleteIndex("twitter").Do(context.Background())
+	// if err != nil {
+	// 	// Handle error
+	// 	panic(err)
+	// }
+	// if !deleteIndex.Acknowledged {
+	// 	// Not acknowledged
+	// }
+
+	//--------------------- Конец Работа с ElasticSerch через "gopkg.in/olivere/elastic.v6" --------------------------------
 
 	http.HandleFunc("/", indexPage)
 	http.HandleFunc("/products", ProductsHandler)
