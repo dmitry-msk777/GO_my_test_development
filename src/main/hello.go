@@ -43,6 +43,7 @@ import (
 	//"html/template"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
+	"gopkg.in/mgo.v2/bson"
 
 	//"github.com/olivere/elastic"
 	//"go.uber.org/ratelimit"
@@ -80,6 +81,15 @@ import (
 	//"github.com/streadway/amqp"
 	//"github.com/olivere/elastic"
 	// "gopkg.in/olivere/elastic.v6"
+	// "go.mongodb.org/mongo-driver/mongo"
+	// "go.mongodb.org/mongo-driver/mongo/options"
+	//"gopkg.in/mgo.v2"
+	//"gopkg.in/mgo.v2/bson"
+	//"github.com/marpaia/graphite-golang"
+	//_ "github.com/influxdata/influxdb1-client" // this is important because of the bug in go mod
+	//"context"
+	//"github.com/segmentio/kafka-go"
+	// "github.com/go-redis/redis/v7"
 )
 
 const (
@@ -213,6 +223,12 @@ type NOTIFYICONDATA struct {
 	HBalloonIcon     uintptr
 }
 
+type Product struct {
+	Id      bson.ObjectId `bson:"_id"`
+	Model   string        `bson:"model"`
+	Company string        `bson:"company"`
+	Price   int           `bson:"price"`
+}
 type Result struct {
 	Name, Description, URL string
 }
@@ -228,6 +244,31 @@ type SearchResults struct {
 	Results1 []Result
 	Results2 []Result
 	Results3 []Result
+}
+
+type phoneWriter struct{}
+
+func (p phoneWriter) Write(bs []byte) (int, error) {
+	if len(bs) == 0 {
+		return 0, nil
+	}
+	for i := 0; i < len(bs); i++ {
+		if bs[i] >= '0' && bs[i] <= '9' {
+			fmt.Print(string(bs[i]))
+		}
+	}
+	fmt.Println()
+	return len(bs), nil
+}
+
+type person777 struct {
+	name string
+	age  int
+}
+
+func (p person777) print() {
+	fmt.Println("Имя:", p.name)
+	fmt.Println("Возраст:", p.age)
 }
 
 var (
@@ -303,6 +344,15 @@ func urlEncoded(str string) (string, error) {
 	return u.String(), nil
 }
 
+func factorial(n int, ch chan int) {
+	defer close(ch)
+	result := 1
+	for i := 1; i <= n; i++ {
+		result *= i
+		ch <- result
+	}
+}
+
 // func recordMetrics() {
 // 	go func() {
 // 		for {
@@ -310,6 +360,19 @@ func urlEncoded(str string) (string, error) {
 // 			time.Sleep(2 * time.Second)
 // 		}
 // 	}()
+// }
+
+// func GetClient() *mongo.Client {
+// 	clientOptions := options.Client().ApplyURI("mongodb://localhost:32787")
+// 	client, err := mongo.NewClient(clientOptions)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	err = client.Connect(context.Background())
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	return client
 // }
 
 func indexPage(w http.ResponseWriter, r *http.Request) {
@@ -1876,8 +1939,209 @@ func main() {
 
 	//--------------------- Конец Работа с ElasticSerch через "gopkg.in/olivere/elastic.v6" --------------------------------
 
+	// //--------------------- Работа с MongoDB --------------------------------
+	// c := GetClient()
+	// err := c.Ping(context.Background(), readpref.Primary())
+	// if err != nil {
+	// 	log.Fatal("Couldn't connect to the database", err)
+	// } else {
+	// 	log.Println("Connected!")
+	// }
+	// //--------------------- Конец Работа с MongoDB" --------------------------------
+
+	// //--------------------- Работа с MongoDB через gopkg.in/mgo.v2 --------------------------------
+	// //-- mgo на данный момент не поддерживается автором после того как вышел официальный mongodb-драйвер.
+	// // открываем соединение
+	// session, err := mgo.Dial("mongodb://127.0.0.1:32787")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer session.Close()
+
+	// // получаем коллекцию
+	// productCollection := session.DB("productdb").C("products")
+
+	// // p1 := &Product{Id: bson.NewObjectId(), Model: "iPhone 8", Company: "Apple", Price: 64567}
+	// // // добавляем один объект
+	// // err = productCollection.Insert(p1)
+	// // if err != nil {
+	// // 	fmt.Println(err)
+	// // }
+
+	// // p2 := &Product{Id: bson.NewObjectId(), Model: "Pixel 2", Company: "Google", Price: 58000}
+	// // p3 := &Product{Id: bson.NewObjectId(), Model: "Xplay7", Company: "Vivo", Price: 49560}
+	// // // добавляем два объекта
+	// // err = productCollection.Insert(p2, p3)
+	// // if err != nil {
+	// // 	fmt.Println(err)
+	// // }
+	// // // получаем коллекцию
+	// // productCollection := session.DB("productdb").C("products")
+	// // критерий выборки
+	// query := bson.M{}
+	// // объект для сохранения результата
+	// products := []Product{}
+	// productCollection.Find(query).All(&products)
+
+	// for _, p := range products {
+
+	// 	fmt.Println(p.Model, p.Company, p.Price)
+	// }
+
+	// // удаляем все документы с company = "Vivo"
+	// _, err = productCollection.RemoveAll(bson.M{"company": "Vivo"})
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// //--------------------- Конец Работа с MongoDB через gopkg.in/mgo.v2 --------------------------------
+
+	//--------------------- Работа с Graphite через github.com/marpaia/graphite-golang --------------------------------
+
+	// // try to connect a graphite server
+	// Graphite, err := graphite.NewGraphite("localhost", 32796) //127.0.0.1 Port 2003
+
+	// // if you couldn't connect to graphite, use a nop
+	// if err != nil {
+	// 	Graphite = graphite.NewGraphiteNop("localhost", 32796)
+	// }
+
+	// log.Printf("Loaded Graphite connection: %#v", Graphite)
+	// //Graphite.SimpleSend("stats.graphite_loaded777", "1")
+	// Graphite.SimpleSend("graphite_loaded777.777", "50")
+	//--------------------- Конец Работа с Graphite через github.com/marpaia/graphite-golang --------------------------------
+
+	//--------------------- Работа с influxdb через "github.com/influxdata/influxdb-client-go" --------------------------------
+	// // Make client
+	// c, err := client.NewHTTPClient(client.HTTPConfig{
+	// 	Addr: "http://localhost:32860",
+	// })
+	// if err != nil {
+	// 	fmt.Println("Error creating InfluxDB Client: ", err.Error())
+	// }
+	// defer c.Close()
+
+	// q := client.NewQuery("CREATE DATABASE telegraf", "", "")
+	// if response, err := c.Query(q); err == nil && response.Error() == nil {
+	// 	fmt.Println(response.Results)
+	// }
+
+	// // q2 := client.NewQuery("SELECT count(value) FROM cpu_load", "mydb", "")
+	// // if response, err := c.Query(q2); err == nil && response.Error() == nil {
+	// // 	fmt.Println(response.Results)
+	// // }
+	// //q2 := client.NewQuery("SELECT count(value) FROM weather", "test_golang", "")
+	// q2 := client.NewQuery("SELECT * FROM weather", "test_golang", "")
+	// response, err := c.Query(q2)
+
+	// if err != nil && response.Error() != nil {
+	// 	fmt.Println("Error creating InfluxDB Client: ", err.Error())
+	// } else {
+	// 	for _, value := range response.Results {
+	// 		if value.Err != "" {
+	// 			fmt.Println("Error body response InfluxDB Client: ", value.Err)
+	// 		} else {
+	// 			fmt.Println("Body response InfluxDB Client: ", value.Messages)
+	// 		}
+
+	// 	}
+	// 	//fmt.Println("Body response InfluxDB Client: ", response.Results)
+	// }
+
+	//--------------------- Конец Работа с influxdb  через "github.com/influxdata/influxdb-client-go" --------------------------------
+
+	//------------------------------------------------------------- Работа с Kafca ----------------------------------------------------------------
+
+	// // make a writer that produces to topic-A, using the least-bytes distribution
+	// w := kafka.NewWriter(kafka.WriterConfig{
+	// 	Brokers:  []string{"localhost:32783"},
+	// 	Topic:    "topic-A",
+	// 	Balancer: &kafka.LeastBytes{},
+	// })
+
+	// w.WriteMessages(context.Background(),
+	// 	kafka.Message{
+	// 		Key:   []byte("Key-A"),
+	// 		Value: []byte("Hello World!"),
+	// 	},
+	// 	kafka.Message{
+	// 		Key:   []byte("Key-B"),
+	// 		Value: []byte("One!"),
+	// 	},
+	// 	kafka.Message{
+	// 		Key:   []byte("Key-C"),
+	// 		Value: []byte("Two!"),
+	// 	},
+	// )
+	// w.Close()
+
+	// //make a new reader that consumes from topic-A, partition 0, at offset 42
+	// r := kafka.NewReader(kafka.ReaderConfig{
+	// 	Brokers:   []string{"localhost:32780"},
+	// 	Topic:     "topic-A",
+	// 	Partition: 0,
+	// 	MinBytes:  10e3, // 10KB
+	// 	MaxBytes:  10e6, // 10MB
+	// })
+	// r.SetOffset(42)
+
+	// for {
+	// 	m, err := r.ReadMessage(context.Background())
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		break
+	// 	}
+	// 	fmt.Printf("message at offset %d: %s = %s\n", m.Offset, string(m.Key), string(m.Value))
+	// }
+	// r.Close()
+
+	//------------------------------------------------------------ Конец Работа с Kafca -----------------------------------------------------------
+
+	//------------------------------------------------------------- Работа с Redis ----------------------------------------------------------------
+	// client := redis.NewClient(&redis.Options{
+	// 	Addr:     "localhost:32785",
+	// 	Password: "", // no password set
+	// 	DB:       0,  // use default DB
+	// })
+
+	// pong, err := client.Ping().Result()
+	// fmt.Println(pong, err)
+	// // Output: PONG <nil>
+
+	// err = client.Set("1c", "Говно---", 0).Err()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// val, err := client.Get("1c").Result()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println("key", val)
+
+	// val2, err := client.Get("key2").Result()
+	// if err == redis.Nil {
+	// 	fmt.Println("key2 does not exist")
+	// } else if err != nil {
+	// 	panic(err)
+	// } else {
+	// 	fmt.Println("key2", val2)
+	// }
+	// // Output: key value
+	// // key2 does not exist
+
+	//------------------------------------------------------------- Конец Работа с Redis ----------------------------------------------------------------
+
+	bytes1 := []byte("+1(234)567 9010")
+	bytes2 := []byte("+2-345-678-12-35")
+
+	writer := phoneWriter{}
+	writer.Write(bytes1)
+	writer.Write(bytes2)
+
+	//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 	http.HandleFunc("/", indexPage)
-	http.HandleFunc("/products", ProductsHandler)
+	//http.HandleFunc("/products", ProductsHandler)
 	fmt.Println("Start 1C Port 8081")
 	http.ListenAndServe(":8081", nil)
 
