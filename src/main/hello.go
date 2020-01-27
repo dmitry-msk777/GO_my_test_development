@@ -90,6 +90,9 @@ import (
 	//"context"
 	//"github.com/segmentio/kafka-go"
 	// "github.com/go-redis/redis/v7"
+	//"github.com/tarantool/go-tarantool"
+	//"github.com/gocql/gocql"
+	//r "github.com/dancannon/gorethink"
 )
 
 const (
@@ -2131,14 +2134,141 @@ func main() {
 
 	//------------------------------------------------------------- Конец Работа с Redis ----------------------------------------------------------------
 
-	bytes1 := []byte("+1(234)567 9010")
-	bytes2 := []byte("+2-345-678-12-35")
+	//------------------------------------------------------------- Работа с Tarantool через "github.com/tarantool/go-tarantool" ----------------------------------------------------------------
+	//var spaceNo uint32
+	//spaceNo = uint32(999)
 
-	writer := phoneWriter{}
-	writer.Write(bytes1)
-	writer.Write(bytes2)
+	//spaceNo := uint32(512)
 
-	//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	//spaceNo = uint32(999)
+	//indexNo := uint32(0)
+
+	// server := "127.0.0.1:32787"
+	// opts := tarantool.Opts{
+	// 	Timeout:       500 * time.Millisecond,
+	// 	Reconnect:     1 * time.Second,
+	// 	MaxReconnects: 3,
+	// 	User:          "guest",
+	// 	Pass:          "",
+	// }
+	// client, err := tarantool.Connect(server, opts)
+
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect: %s", err.Error())
+	// }
+
+	// resp, err := client.Ping()
+	// log.Println(resp.Code)
+	// log.Println(resp.Data)
+	// log.Println(err)
+
+	// //resp, err = client.Insert(spaceNo, []interface{}{uint(10), 1})
+	// resp, err = client.Insert("example-1.0", []interface{}{uint(10), 1})
+	// log.Println("Insert")
+	// log.Println("Error", err)
+	// log.Println("Code", resp.Code)
+	// log.Println("Data", resp.Data)
+
+	//------------------------------------------------------------- Конец Работа с Tarantool через "github.com/tarantool/go-tarantool" ----------------------------------------------------------------
+
+	//------------------------------------------------------------- Работа с Cassandra  через "github.com/gocql/gocql" ----------------------------------------------------------------
+	// // connect to the cluster
+	// cluster := gocql.NewCluster("127.0.0.1")
+	// cluster.Keyspace = "example"
+	// cluster.Consistency = gocql.Quorum
+	// cluster.Port = 32789 //9042
+	// session, _ := cluster.CreateSession()
+	// defer session.Close()
+
+	// // insert a tweet
+	// if err := session.Query(`INSERT INTO tweet (timeline, id, text) VALUES (?, ?, ?)`,
+	// 	"me", gocql.TimeUUID(), "hello world").Exec(); err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// var id gocql.UUID
+	// var text string
+
+	// /* Search for a specific set of records whose 'timeline' column matches
+	//  * the value 'me'. The secondary index that we created earlier will be
+	//  * used for optimizing the search */
+	// if err := session.Query(`SELECT id, text FROM tweet WHERE timeline = ? LIMIT 1`,
+	// 	"me").Consistency(gocql.One).Scan(&id, &text); err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("Tweet:", id, text)
+
+	// // list all tweets
+	// iter := session.Query(`SELECT id, text FROM tweet WHERE timeline = ?`, "me").Iter()
+	// for iter.Scan(&id, &text) {
+	// 	fmt.Println("Tweet:", id, text)
+	// }
+	// if err := iter.Close(); err != nil {
+	// 	log.Fatal(err)
+	// }
+	//------------------------------------------------------------- Конец Работа с RethinkDB  через "gopkg.in/rethinkdb/rethinkdb-go.v6" ----------------------------------------------------------------
+	// session, err := r.Connect(r.ConnectOpts{
+	// 	Address: "localhost:32796", //28015
+	// 	//Database: "test",
+	// 	//AuthKey:  "14daak1cad13dj",
+	// })
+
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	// res, err := r.Expr("Hello World").Run(session)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	// var response string
+	// err = res.One(&response)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	// fmt.Println(response)
+
+	// err = r.DB("test").Table("test_golang").Insert(map[string]string{
+	// 	"id":       "john777",
+	// 	"password": "777_p455w0rd",
+	// }).Exec(session)
+
+	// res, err := r.DB("test").Table("test_golang").Get("john777").Run(session)
+	// if err != nil {
+	// 	// error
+	// }
+	// defer res.Close() // Always ensure you close the cursor to ensure connections are not leaked
+	// for _, value := range res.responses {
+	// 	fmt.Println(string(value))
+	// }
+	//------------------------------------------------------------- Конец Работа с Cassandra  через "gopkg.in/rethinkdb/rethinkdb-go.v6" ----------------------------------------------------------------
+
+	//------------------------------------------------------------- Работа с ClickHouse  через "github.com/roistat/go-clickhouse" ----------------------------------------------------------------
+	// transport := clickhouse.NewHttpTransport()
+	// conn := clickhouse.NewConn("localhost:32770", transport) //8123
+	// err := conn.Ping()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// q := clickhouse.NewQuery("INSERT INTO logs VALUES (toDate(now()), ?, ?)", 1, "Log message777") //q := clickhouse.NewQuery("INSERT INTO golang_test.logs VALUES (toDate(now()), ?, ?)", 1, "Log message")
+	// q.Exec(conn)
+
+	// q := clickhouse.NewQuery("SELECT `message` FROM logs") //q = clickhouse.NewQuery("SELECT `message` FROM golang_test.logs")
+	// i := q.Iter(conn)
+	// for {
+	// 	var message string
+	// 	scanned := i.Scan(&message)
+	// 	if scanned {
+	// 		fmt.Println(message)
+	// 	} else if err != nil {
+	// 		panic(i.Error())
+	// 	}
+	// }
+
+	//------------------------------------------------------------- Конец Работа с ClickHouse  через "github.com/roistat/go-clickhouse" ----------------------------------------------------------------
 
 	http.HandleFunc("/", indexPage)
 	//http.HandleFunc("/products", ProductsHandler)
