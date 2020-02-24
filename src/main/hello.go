@@ -1545,12 +1545,12 @@ func main() {
 	}
 
 	doc := map[string]interface{}{
-		"_id":      "cow5",
+		"_id":      "cow6",
 		"feet":     4,
 		"greeting": "moo",
 	}
 
-	rev, err := db.Put(context.TODO(), "cow5", doc)
+	rev, err := db.Put(context.TODO(), "cow6", doc)
 	if err != nil {
 		panic(err)
 	}
