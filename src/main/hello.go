@@ -93,45 +93,42 @@ import (
 	//"github.com/tarantool/go-tarantool"
 	//"github.com/gocql/gocql"
 	//r "github.com/dancannon/gorethink"
+	//"github.com/golang/protobuf/proto"
+	//pb "github.com/mycodesmells/golang-examples/nats/pubsub/proto"
+	//nats "github.com/nats-io/nats.go"
+	pb "../main/proto"
+
+	"golang.org/x/net/context"
+	//"google.golang.org/grpc"
+	//"google.golang.org/grpc/grpclog"
 )
 
-const (
-	IMAGE_ICON      = 1
-	LR_DEFAULTSIZE  = 0x00000040
-	LR_LOADFROMFILE = 0x00000010
+type server struct{}
 
-	NIM_ADD        = 0x00000000
-	NIM_MODIFY     = 0x00000001
-	NIM_DELETE     = 0x00000002
-	NIM_SETFOCUS   = 0x00000003
-	NIM_SETVERSION = 0x00000004
+func (s *server) Do(c context.Context, request *pb.Request) (response *pb.Response, err error) {
+	n := 0
+	// Сreate an array of runes to safely reverse a string.
+	rune := make([]rune, len(request.Message))
 
-	NIF_MESSAGE  = 0x00000001
-	NIF_ICON     = 0x00000002
-	NIF_TIP      = 0x00000004
-	NIF_STATE    = 0x00000008
-	NIF_INFO     = 0x00000010
-	NIF_GUID     = 0x00000020
-	NIF_REALTIME = 0x00000040
-	NIF_SHOWTIP  = 0x00000080
+	for _, r := range request.Message {
+		rune[n] = r
+		n++
+	}
 
-	NIS_HIDDEN     = 0x00000001
-	NIS_SHAREDICON = 0x00000002
+	// Reverse using runes.
+	rune = rune[0:n]
 
-	NIIF_NONE               = 0x00000000
-	NIIF_INFO               = 0x00000001
-	NIIF_WARNING            = 0x00000002
-	NIIF_ERROR              = 0x00000003
-	NIIF_USER               = 0x00000004
-	NIIF_NOSOUND            = 0x00000010
-	NIIF_LARGE_ICON         = 0x00000020
-	NIIF_RESPECT_QUIET_TIME = 0x00000080
-	NIIF_ICON_MASK          = 0x0000000F
+	for i := 0; i < n/2; i++ {
+		rune[i], rune[n-1-i] = rune[n-1-i], rune[i]
+	}
 
-	NIN_BALLOONSHOW      = 0x0402
-	NIN_BALLOONTIMEOUT   = 0x0404
-	NIN_BALLOONUSERCLICK = 0x0405
-)
+	output := string(rune)
+	response = &pb.Response{
+		Message: output,
+	}
+
+	return response, nil
+}
 
 type Config struct {
 	TelegramBotToken string
@@ -2269,6 +2266,103 @@ func main() {
 	// }
 
 	//------------------------------------------------------------- Конец Работа с ClickHouse  через "github.com/roistat/go-clickhouse" ----------------------------------------------------------------
+
+	//------------------------------------------------------------- Работа с ActiveMQ  через "github.com/go-stomp/stomp" ----------------------------------------------------------------
+	// conn, err := stomp.Dial("tcp", "localhost:32788") //61613
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// err = conn.Send(
+	// 	"/queue/test-777",            // destination
+	// 	"text/plain",                 // content-type
+	// 	[]byte("Test7 message #777")) // body
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
+	// //And to get the message ?
+	// // conn, err := stomp.Dial("tcp", "localhost:32788") //61613
+	// // if err != nil {
+	// // 	fmt.Println(err)
+	// // }
+	// sub, err := conn.Subscribe("/queue/test-777", stomp.AckClient)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// for {
+	// 	msg := <-sub.C
+	// 	fmt.Println(string(msg.Body))
+
+	// 	// acknowledge the message
+	// 	err = conn.Ack(msg)
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 	}
+	// }
+	//------------------------------------------------------------- Конец Работа с ActiveMQ  через "github.com/go-stomp/stomp" ----------------------------------------------------------------
+
+	//------------------------------------------------------------- Работа с NATS через "github.com/nats-io/nats.go" ----------------------------------------------------------------
+	// // Connect to a server
+	// natsClient, err := nats.Connect("nats://localhost:32785") // nats://derek:pass@localhost:4222
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
+	// myUser := Transport.User{}
+	// myUser.Name = "556"
+	// data, err := proto.Marshal(&myUser)
+	// fmt.Println(string(data))
+
+	//  myUser2 := Transport.User{}
+	//  err = proto.Unmarshal(data, &myUser2)
+
+	// // message := &pb.PublishPostMessage{
+	// // 	Title:   pubReq.Title,
+	// // 	Content: pubReq.Content,
+	// // }
+
+	// // message.Title = "100"
+	// // message.Content = "1007"
+
+	// bs, err := proto.Marshal(&myUser)
+	// err = natsClient.Publish("posts:publish", bs)
+
+	// err = natsClient.Flush()
+	// err = natsClient.LastError()
+
+	// // Connect to a server
+	// natsClient2, err2 := nats.Connect("nats://localhost:32785") // nats://derek:pass@localhost:4222
+	// if err != nil {
+	// 	fmt.Println(err2)
+	// }
+
+	// _, err = natsClient2.Subscribe("posts:publish", func(msg *nats.Msg) {
+	// 	fmt.Printf("Received a message: %s\n", string(msg.Data))
+	// 	fmt.Println("8888")
+	// })
+
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
+	//------------------------------------------------------------- Конец Работа с NATS через "github.com/nats-io/nats.go" ----------------------------------------------------------------
+
+	//------------------------------------------------------------- Работа с gRPC -------------------------------------------
+	// listener, err := net.Listen("tcp", ":5300")
+
+	// if err != nil {
+	// 	grpclog.Fatalf("failed to listen: %v", err)
+	// }
+
+	// opts := []grpc.ServerOption{}
+	// grpcServer := grpc.NewServer(opts...)
+
+	// fmt.Println("Start 1C Port 5300")
+
+	// pb.RegisterReverseServer(grpcServer, &server{})
+	// grpcServer.Serve(listener)
+
+	//------------------------------------------------------------- Конец Работа с gRPC -------------------------------------------
 
 	http.HandleFunc("/", indexPage)
 	//http.HandleFunc("/products", ProductsHandler)
