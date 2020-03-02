@@ -42,7 +42,7 @@ import (
 	//"github.com/gorilla/mux"
 	//"html/template"
 	"github.com/gorilla/sessions"
-	"github.com/gorilla/websocket"
+	//"github.com/gorilla/websocket"
 	"gopkg.in/mgo.v2/bson"
 
 	//"github.com/olivere/elastic"
@@ -101,6 +101,8 @@ import (
 	"golang.org/x/net/context"
 	//"google.golang.org/grpc"
 	//"google.golang.org/grpc/grpclog"
+	//"github.com/gorilla/mux"
+	"golang.org/x/net/websocket"
 )
 
 type server struct{}
@@ -313,10 +315,18 @@ var steps = []string{
 	"staring servers",
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
+// var upgrader = websocket.Upgrader{
+// 	ReadBufferSize:  1024,
+// 	WriteBufferSize: 1024,
+// }
+
+// var upgrader = websocket.Upgrader{
+// 	ReadBufferSize:  1024,
+// 	WriteBufferSize: 1024,
+// 	CheckOrigin: func(r *http.Request) bool {
+// 		return true
+// 	},
+// }
 
 // var (
 // 	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
@@ -352,6 +362,72 @@ func factorial(n int, ch chan int) {
 		ch <- result
 	}
 }
+
+// 1
+type longLatStruct struct {
+	Long float64 `json:"longitude"`
+	Lat  float64 `json:"latitude"`
+}
+
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan *longLatStruct)
+
+// var upgrader = websocket.Upgrader{
+// 	CheckOrigin: func(r *http.Request) bool {
+// 		return true
+// 	},
+// }
+// var upgrader_del = websocket.Upgrader{
+// 	CheckOrigin: func(r *http.Request) bool {
+// 		return true
+// 	},
+// }
+
+// func rootHandler(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Fprintf(w, "home")
+// }
+
+func writer(coord *longLatStruct) {
+	broadcast <- coord
+}
+
+func longLatHandler(w http.ResponseWriter, r *http.Request) {
+	var coordinates longLatStruct
+	if err := json.NewDecoder(r.Body).Decode(&coordinates); err != nil {
+		log.Printf("ERROR: %s", err)
+		http.Error(w, "Bad request", http.StatusTeapot)
+		return
+	}
+	defer r.Body.Close()
+	go writer(&coordinates)
+}
+
+// func wsHandler(w http.ResponseWriter, r *http.Request) {
+// 	ws, err := upgrader.Upgrade(w, r, nil)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	// register client
+// 	clients[ws] = true
+// }
+
+// 3
+// func echo() {
+// 	for {
+// 		val := <-broadcast
+// 		latlong := fmt.Sprintf("%f %f %s", val.Lat, val.Long)
+// 		// send to every client that is currently connected
+// 		for client := range clients {
+// 			err := client.WriteMessage(websocket.TextMessage, []byte(latlong))
+// 			if err != nil {
+// 				log.Printf("Websocket error: %s", err)
+// 				client.Close()
+// 				delete(clients, client)
+// 			}
+// 		}
+// 	}
+// }
 
 // func recordMetrics() {
 // 	go func() {
@@ -703,6 +779,71 @@ func generator(in chan<- part) {
 		in <- part{string(start), b}
 		start[0] = b
 	}
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	content, err := ioutil.ReadFile("index.html")
+	if err != nil {
+		fmt.Println("Could not open file.", err)
+	}
+	fmt.Fprintf(w, "%s", content)
+}
+
+// func wsHandler(w http.ResponseWriter, r *http.Request) {
+// 	// if r.Header.Get("Origin") != "http://"+r.Host {
+// 	// 	http.Error(w, "Origin not allowed", 403)
+// 	// 	return
+// 	// }
+// 	conn, err := websocket.Upgrade(w, r, w.Header(), 1024, 1024)
+// 	if err != nil {
+// 		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
+// 	}
+
+// 	go echo(conn)
+// }
+
+// func echo(conn *websocket.Conn) {
+// 	for {
+// 		m := msg{}
+
+// 		err := conn.ReadJSON(&m)
+// 		if err != nil {
+// 			fmt.Println("Error reading json.", err)
+// 		}
+
+// 		fmt.Printf("Got message: %#v\n", m)
+
+// 		if err = conn.WriteJSON(m); err != nil {
+// 			fmt.Println(err)
+// 		}
+// 	}
+// }
+
+func Echo(ws *websocket.Conn) {
+	var err error
+
+	for {
+		var reply string
+
+		if err = websocket.Message.Receive(ws, &reply); err != nil {
+			fmt.Println("Can't receive")
+			break
+		}
+
+		fmt.Println("Received back from client: " + reply)
+
+		msg := "Received:  " + reply
+		fmt.Println("Sending to client: " + msg)
+
+		if err = websocket.Message.Send(ws, msg); err != nil {
+			fmt.Println("Can't send")
+			break
+		}
+	}
+}
+
+type msg struct {
+	Num int
 }
 
 func main() {
@@ -2364,9 +2505,35 @@ func main() {
 
 	//------------------------------------------------------------- Конец Работа с gRPC -------------------------------------------
 
-	http.HandleFunc("/", indexPage)
-	//http.HandleFunc("/products", ProductsHandler)
-	fmt.Println("Start 1C Port 8081")
-	http.ListenAndServe(":8081", nil)
+	//------------------------------------------------------------- Работа с websocket -------------------------------------------
+	// router := mux.NewRouter()
+	// router.HandleFunc("/", rootHandler).Methods("GET")
+	// router.HandleFunc("/longlat", longLatHandler).Methods("POST")
+	// router.HandleFunc("/ws", wsHandler)
+	// go echo()
+
+	// log.Fatal(http.ListenAndServe(":8844", router))
+
+	//------------------------------------------------------------- Работа с websocket 2 вариант -----------------------------------------
+
+	// http.HandleFunc("/ws", wsHandler)
+	// http.HandleFunc("/", rootHandler)
+
+	// panic(http.ListenAndServe(":8088", nil))
+
+	//------------------------------------------------------------- Работа с websocket 3 вариант ------------------------
+
+	http.Handle("/", websocket.Handler(Echo))
+
+	if err := http.ListenAndServe(":1234", nil); err != nil {
+		log.Fatal("ListenAndServe:", err)
+	}
+
+	//------------------------------------------------------------- Конец работа с websocket -------------------------------------------
+
+	// http.HandleFunc("/", indexPage)
+	// //http.HandleFunc("/products", ProductsHandler)
+	// fmt.Println("Start 1C Port 8081")
+	// http.ListenAndServe(":8081", nil)
 
 }
