@@ -102,6 +102,7 @@ import (
 	//"google.golang.org/grpc"
 	//"google.golang.org/grpc/grpclog"
 	//"github.com/gorilla/mux"
+
 	"golang.org/x/net/websocket"
 )
 
@@ -2523,17 +2524,55 @@ func main() {
 
 	//------------------------------------------------------------- Работа с websocket 3 вариант ------------------------
 
-	http.Handle("/", websocket.Handler(Echo))
+	// http.Handle("/", websocket.Handler(Echo))
 
-	if err := http.ListenAndServe(":1234", nil); err != nil {
-		log.Fatal("ListenAndServe:", err)
-	}
+	// if err := http.ListenAndServe(":1234", nil); err != nil {
+	// 	log.Fatal("ListenAndServe:", err)
+	// }
 
 	//------------------------------------------------------------- Конец работа с websocket -------------------------------------------
 
-	// http.HandleFunc("/", indexPage)
-	// //http.HandleFunc("/products", ProductsHandler)
-	// fmt.Println("Start 1C Port 8081")
-	// http.ListenAndServe(":8081", nil)
+	//------------------------------------------------------------- Работа с aerospike через с github.com/aerospike/aerospike-client-go" ------------------------------------------
+
+	// client, err := as.NewClient("127.0.0.1", 32794) //3000
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// // // Write single value.
+	// key, _ := as.NewKey("test", "myset", "mykey")
+	// // // bin := as.NewBin("mybin", "myvalue")
+
+	// // // var wpolicy = as.NewWritePolicy(0, 0)
+	// // // client.PutBins(wpolicy, key, bin)
+
+	// // // var rpolicy = as.NewPolicy()
+	// // // exists, err := client.Exists(rpolicy, key)
+
+	// // if exists != true {
+	// // 	fmt.Println(exists)
+	// // } else {
+	// // 	fmt.Println(exists)
+	// // }
+
+	// // Read a record
+	// record, err := client.Get(nil, key)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// // for _, val := range record {
+	// // 	fmt.Println(record)
+	// // }
+
+	// client.Close()
+
+	//------------------------------------------------------------- Конец работа с aerospike через с github.com/aerospike/aerospike-client-go" --------------------------------------
+
+	http.HandleFunc("/", indexPage)
+	//http.HandleFunc("/products", ProductsHandler)
+	fmt.Println("Start 1C Port 8081")
+	http.ListenAndServe(":8081", nil)
 
 }
