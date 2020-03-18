@@ -1215,13 +1215,13 @@ func main() {
 	//	smtpServer := "smtp.yandex.ru"
 	//	auth := smtp.PlainAuth(
 	//		"",
-	//		"dmitry-msk777@yandex.ru",
-	//		"Cnhwgkmgenrm1991",
+	//		"email@yandex.ru",
+	//		"password",
 	//		smtpServer,
 	//	)
 
-	//	from := mail.Address{"Test", "dmitry-msk777@yandex.ru"}
-	//	to := mail.Address{"test2", "dima-irk35@mail.ru"}
+	//	from := mail.Address{"Test", "email@yandex.ru"}
+	//	to := mail.Address{"test2", "email@mail.ru"}
 	//	title := "Title"
 
 	//	body := "body"
