@@ -42,6 +42,8 @@ import (
 	//"github.com/gorilla/mux"
 	//"html/template"
 	"github.com/gorilla/sessions"
+	"github.com/streadway/amqp"
+
 	//"github.com/gorilla/websocket"
 	"gopkg.in/mgo.v2/bson"
 
@@ -1774,49 +1776,49 @@ func main() {
 
 	// //--------------------- Работа с rabbitmq через "github.com/streadway/amqp" --------------------------------
 
-	// conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	// if err != nil {
-	// 	fmt.Println("Failed to connect to RabbitMQ")
-	// 	panic(err)
-	// }
-	// defer conn.Close()
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		fmt.Println("Failed to connect to RabbitMQ")
+		panic(err)
+	}
+	defer conn.Close()
 
-	// ch, err := conn.Channel()
-	// if err != nil {
-	// 	fmt.Println("Failed to open a channel")
-	// 	panic(err)
-	// }
-	// defer ch.Close()
+	ch, err := conn.Channel()
+	if err != nil {
+		fmt.Println("Failed to open a channel")
+		panic(err)
+	}
+	defer ch.Close()
 
-	// //Sending
-	// // q, err := ch.QueueDeclare(
-	// // 	"hello", // name
-	// // 	false,   // durable
-	// // 	false,   // delete when unused
-	// // 	false,   // exclusive
-	// // 	false,   // no-wait
-	// // 	nil,     // arguments
-	// // )
-	// // if err != nil {
-	// // 	fmt.Println("Failed to declare a queue")
-	// // 	panic(err)
-	// // }
+	//Sending
+	q, err := ch.QueueDeclare(
+		"hello", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	if err != nil {
+		fmt.Println("Failed to declare a queue")
+		panic(err)
+	}
 
-	// // body := "Hello World!"
-	// // err = ch.Publish(
-	// // 	"",     // exchange
-	// // 	q.Name, // routing key
-	// // 	false,  // mandatory
-	// // 	false,  // immediate
-	// // 	amqp.Publishing{
-	// // 		ContentType: "text/plain",
-	// // 		Body:        []byte(body),
-	// // 	})
+	body := "Hello World!"
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(body),
+		})
 
-	// // if err != nil {
-	// // 	fmt.Println("Failed to publish a message")
-	// // 	panic(err)
-	// // }
+	if err != nil {
+		fmt.Println("Failed to publish a message")
+		panic(err)
+	}
 
 	// //Receiving
 
